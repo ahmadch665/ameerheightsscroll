@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "Space Grotesk", ui-monospace, monospace;
+
+  --color-dark-primary: #111315;
+  --color-dark-secondary: #181B1D;
+  --color-dark-charcoal: #242526;
+  --color-ivory-warm: #F3F0E9;
+  --color-ivory-soft: #FAF9F6;
+  --color-bronze: #B59A6A;
+  --color-bronze-light: #CBB488;
+  --color-gray-muted: #8C8C87;
+  --color-gray-subtle: #D8D3CA;
+}
+
+@layer base {
+  html {
+    background-color: #111315;
+    color: #F3F0E9;
+    font-family: var(--font-sans);
+  }
+
+  /* Custom subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111315;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #242526;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B59A6A;
+  }
+}
+
+/* Subtle architectural living background animation */
+@keyframes ambientGlow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.04;
+  }
+  50% {
+    transform: translate(3%, 4%) scale(1.08);
+    opacity: 0.07;
+  }
+}
+
+.living-ambient {
+  animation: ambientGlow 24s ease-in-out infinite alternate;
+}

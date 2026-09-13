@@ -1,0 +1,92 @@
+import React from 'react';
+import { projectData } from '../data/projectData';
+
+export const ProjectStats: React.FC = () => {
+  const stats = [
+    {
+      number: "30",
+      label: "Fully Furnished Residences",
+      caption: "Turnkey luxury apartments inclusive of furniture & accessories"
+    },
+    {
+      number: "G+3",
+      label: "Floors",
+      caption: "Boutique residential low-rise scale offering privacy & serenity"
+    },
+    {
+      number: "15,000",
+      prefix: "PKR",
+      suffix: "/ SQ FT",
+      label: "Selling Rate",
+      caption: "Competitive investment pricing with all interior furnishings included"
+    },
+    {
+      number: "1",
+      label: "High-Speed Elevator",
+      caption: "Dedicated swift transit serving Ground through all 3 residential levels"
+    },
+    {
+      number: "3",
+      label: "Residence Types",
+      caption: "Architect-designed Studio, 1 Bedroom & 2 Bedroom configurations"
+    }
+  ];
+
+  return (
+    <section
+      id="stats"
+      className="relative bg-[#111315] text-[#FAF9F6] py-24 md:py-32 px-6 md:px-16 border-y border-[#242526]"
+      aria-label="Ameer Heights Key Project Statistics"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Subtle Section Tag */}
+        <div className="flex items-center gap-3 mb-16">
+          <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
+            02 / PROJECT SPECIFICATIONS
+          </span>
+          <span className="w-8 h-[1px] bg-[#B59A6A]" />
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
+          {stats.map((stat, idx) => (
+            <div
+              key={stat.label}
+              className="relative p-6 md:p-8 bg-[#181B1D]/70 border border-[#242526] hover:border-[#B59A6A]/50 transition-colors duration-500 group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <span className="font-mono text-[10px] text-[#8C8C87] tracking-[0.2em] block">
+                  0{idx + 1}
+                </span>
+
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  {stat.prefix && (
+                    <span className="font-mono text-xs text-[#B59A6A] font-medium tracking-wider">
+                      {stat.prefix}
+                    </span>
+                  )}
+                  <span className="font-serif text-4xl sm:text-5xl lg:text-5xl font-light text-[#FAF9F6] tracking-tight group-hover:text-[#B59A6A] transition-colors">
+                    {stat.number}
+                  </span>
+                  {stat.suffix && (
+                    <span className="font-mono text-[11px] text-[#8C8C87] font-normal tracking-wide">
+                      {stat.suffix}
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="font-mono text-xs uppercase tracking-[0.16em] text-[#D8D3CA] font-medium pt-1">
+                  {stat.label}
+                </h3>
+              </div>
+
+              <p className="text-xs text-[#8C8C87] font-light leading-relaxed mt-6 pt-4 border-t border-[#242526]">
+                {stat.caption}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};

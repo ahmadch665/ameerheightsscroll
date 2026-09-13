@@ -1,0 +1,8 @@
+{
+  "name": "Remix Ameer Heights Tower 10",
+  "description": "Ameer Heights Tower 10 offers 30 fully furnished, architect-designed Studio, 1 Bedroom and 2 Bedroom luxury residences at Main BZU Chowk, Multan, Punjab, Pakistan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
