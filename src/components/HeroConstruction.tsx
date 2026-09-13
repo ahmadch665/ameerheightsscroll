@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { ArrowDown, Play, Pause, RotateCcw, Building2, Layers, CheckCircle2 } from 'lucide-react';
+import { ArrowDown, CheckCircle2 } from 'lucide-react';
 import { projectData } from '../data/projectData';
 import { clamp, lerp } from '../utils/formatters';
 
@@ -13,62 +13,26 @@ const FRAME_PATHS = Array.from(
   (_, i) => `/assets/construction_frames/frame_${String(i + 1).padStart(2, '0')}.webp`
 );
 
-const STAGES = [
-  {
-    phase: '01',
-    title: 'Excavation & Foundation',
-    detail: 'Reinforced concrete footings, structural sub-grade and vertical rebar',
-    range: [0, 0.25],
-    frames: '01 – 08'
-  },
-  {
-    phase: '02',
-    title: 'Structural Framework',
-    detail: 'Ground + 3 reinforced concrete column and slab ascension',
-    range: [0.25, 0.50],
-    frames: '08 – 15'
-  },
-  {
-    phase: '03',
-    title: 'Masonry & Envelope',
-    detail: 'Precision clay brick envelope, window apertures and perimeter walls',
-    range: [0.50, 0.75],
-    frames: '15 – 23'
-  },
-  {
-    phase: '04',
-    title: 'Architectural Completion',
-    detail: 'Graphite composite facade, warm timber vertical louvers & smoked glazing',
-    range: [0.75, 1.0],
-    frames: '23 – 30'
-  }
-];
-
 export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquiry }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Preloaded images in memory
+  // Preloaded image elements in memory
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
   const loadedFlagsRef = useRef<boolean[]>(new Array(TOTAL_FRAMES).fill(false));
 
-  // Frame and progress tracking refs (mutated inside rAF loop for max performance)
+  // High-precision scroll & animation tracking
   const targetProgressRef = useRef(0);
   const currentProgressRef = useRef(0);
-  const currentDrawnIndexRef = useRef(-1);
-  const isPlayingAutoRef = useRef(false);
+  const lastDrawnProgressRef = useRef(-1);
   const isReducedMotionRef = useRef(false);
 
-  // React states for UI HUD & overlays
+  // UI state for text overlay transitions
   const [displayProgress, setDisplayProgress] = useState(0);
-  const [activeStageIndex, setActiveStageIndex] = useState(0);
-  const [activeFrameDisplay, setActiveFrameDisplay] = useState(1);
-  const [isPlayingAuto, setIsPlayingAuto] = useState(false);
   const [isFrame01Loaded, setIsFrame01Loaded] = useState(false);
-  const [allLoaded, setAllLoaded] = useState(false);
 
-  // Helper to find the nearest loaded frame if a specific frame isn't ready
+  // Find nearest loaded frame if a specific frame is not ready
   const getNearestLoadedImage = useCallback((targetIndex: number): HTMLImageElement | null => {
     const images = imagesRef.current;
     const loaded = loadedFlagsRef.current;
@@ -77,12 +41,12 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       return images[targetIndex];
     }
 
-    // Search backwards first (previous completed stage)
+    // Search backwards first (prior stage)
     for (let i = targetIndex - 1; i >= 0; i--) {
       if (loaded[i] && images[i]) return images[i];
     }
 
-    // Search forwards if no previous frame is loaded
+    // Search forwards
     for (let i = targetIndex + 1; i < TOTAL_FRAMES; i++) {
       if (loaded[i] && images[i]) return images[i];
     }
@@ -90,47 +54,68 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return null;
   }, []);
 
-  // Draw a frame image onto the canvas
-  const drawFrame = useCallback((frameIndex: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // Ultra-smooth cross-faded frame rendering on HTML5 canvas
+  const drawInterpolatedFrame = useCallback(
+    (progress: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) return;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (!ctx) return;
 
-    const img = getNearestLoadedImage(frameIndex);
-    if (!img || !img.complete || img.naturalWidth === 0) return;
+      const cw = canvas.width;
+      const ch = canvas.height;
+      if (cw === 0 || ch === 0) return;
 
-    const cw = canvas.width;
-    const ch = canvas.height;
-    if (cw === 0 || ch === 0) return;
+      const clampedProgress = clamp(progress, 0, 1);
+      const continuousFrame = clampedProgress * (TOTAL_FRAMES - 1);
+      const baseIndex = Math.floor(continuousFrame);
+      const nextIndex = Math.min(baseIndex + 1, TOTAL_FRAMES - 1);
+      const blendFactor = continuousFrame - baseIndex;
 
-    // Intelligent contain-scaling: preserve exact aspect ratio without cropping architectural elements
-    const imgW = img.naturalWidth;
-    const imgH = img.naturalHeight;
-    const scale = Math.min(cw / imgW, ch / imgH);
+      const baseImg = getNearestLoadedImage(baseIndex);
+      if (!baseImg || !baseImg.complete || baseImg.naturalWidth === 0) return;
 
-    const dw = Math.round(imgW * scale);
-    const dh = Math.round(imgH * scale);
-    const dx = Math.round((cw - dw) / 2);
-    const dy = Math.round((ch - dh) / 2);
+      // Intelligent contain-scaling: preserve exact architectural proportions
+      const imgW = baseImg.naturalWidth;
+      const imgH = baseImg.naturalHeight;
+      const scale = Math.min(cw / imgW, ch / imgH);
 
-    // Render deep dark background behind building
-    ctx.fillStyle = '#111315';
-    ctx.fillRect(0, 0, cw, ch);
+      const dw = Math.round(imgW * scale);
+      const dh = Math.round(imgH * scale);
+      const dx = Math.round((cw - dw) / 2);
+      const dy = Math.round((ch - dh) / 2);
 
-    // Draw frame centered and sharp
-    ctx.drawImage(img, dx, dy, dw, dh);
-    currentDrawnIndexRef.current = frameIndex;
-  }, [getNearestLoadedImage]);
+      // Architectural backdrop fill
+      ctx.fillStyle = '#111315';
+      ctx.fillRect(0, 0, cw, ch);
 
-  // Sync canvas size with device pixel ratio
+      // 1. Draw base frame
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(baseImg, dx, dy, dw, dh);
+
+      // 2. Continuous sub-frame cross-fade dissolve for butter-smooth scrolling
+      if (blendFactor > 0.008 && baseIndex !== nextIndex) {
+        const nextImg = getNearestLoadedImage(nextIndex);
+        if (nextImg && nextImg.complete && nextImg.naturalWidth > 0) {
+          ctx.globalAlpha = blendFactor;
+          ctx.drawImage(nextImg, dx, dy, dw, dh);
+        }
+      }
+
+      ctx.globalAlpha = 1.0;
+      lastDrawnProgressRef.current = progress;
+    },
+    [getNearestLoadedImage]
+  );
+
+  // Sync canvas resolution with display device pixel ratio
   const syncCanvasDimensions = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2x for memory & performance
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const targetW = Math.round(rect.width * dpr);
     const targetH = Math.round(rect.height * dpr);
@@ -138,24 +123,21 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     if (canvas.width !== targetW || canvas.height !== targetH) {
       canvas.width = targetW;
       canvas.height = targetH;
-      // Redraw current frame at new size
-      if (currentDrawnIndexRef.current >= 0) {
-        drawFrame(currentDrawnIndexRef.current);
+      if (lastDrawnProgressRef.current >= 0) {
+        drawInterpolatedFrame(lastDrawnProgressRef.current);
       }
     }
-  }, [drawFrame]);
+  }, [drawInterpolatedFrame]);
 
-  // Preload all 30 frames with Frame 01 as highest priority
+  // Preload all 30 frames: Frame 01 immediately, remaining 29 in background
   useEffect(() => {
-    // Check reduced motion preference
     if (typeof window !== 'undefined') {
       isReducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
     let isMounted = true;
-    let loadedCounter = 0;
 
-    // 1. Load Frame 01 immediately
+    // Load Frame 01 first
     const img1 = new Image();
     img1.src = FRAME_PATHS[0];
     img1.onload = () => {
@@ -163,13 +145,11 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       imagesRef.current[0] = img1;
       loadedFlagsRef.current[0] = true;
       setIsFrame01Loaded(true);
-      loadedCounter++;
 
-      // Sync canvas dimensions and draw Frame 01 immediately
       syncCanvasDimensions();
-      drawFrame(0);
+      drawInterpolatedFrame(0);
 
-      // 2. Preload remaining 29 frames in background
+      // Preload remaining frames
       for (let i = 1; i < TOTAL_FRAMES; i++) {
         const img = new Image();
         img.src = FRAME_PATHS[i];
@@ -177,21 +157,13 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           if (!isMounted) return;
           imagesRef.current[i] = img;
           loadedFlagsRef.current[i] = true;
-          loadedCounter++;
 
-          if (loadedCounter === TOTAL_FRAMES) {
-            setAllLoaded(true);
+          // If current scroll position requires this frame, re-draw
+          const currentPos = currentProgressRef.current;
+          const targetFrame = currentPos * (TOTAL_FRAMES - 1);
+          if (Math.abs(targetFrame - i) < 1.0) {
+            drawInterpolatedFrame(currentPos);
           }
-
-          // If the current target progress needs this frame and it wasn't rendered yet
-          const currentIndex = Math.round(currentProgressRef.current * (TOTAL_FRAMES - 1));
-          if (currentIndex === i && currentDrawnIndexRef.current !== i) {
-            drawFrame(i);
-          }
-        };
-        img.onerror = () => {
-          // Graceful fallback: marked as unready, nearest frame will be used
-          console.warn(`[Ameer Heights] Frame ${i + 1} preload retry notice`);
         };
       }
     };
@@ -199,65 +171,41 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return () => {
       isMounted = false;
     };
-  }, [syncCanvasDimensions, drawFrame]);
+  }, [syncCanvasDimensions, drawInterpolatedFrame]);
 
-  // Animation render loop using requestAnimationFrame
+  // Ultra-fluid requestAnimationFrame render loop with exponential smoothing
   useEffect(() => {
     let lastRenderedProgress = -1;
 
     const renderLoop = () => {
       if (isReducedMotionRef.current) {
-        // Reduced motion: snap directly to completion or static
-        drawFrame(TOTAL_FRAMES - 1);
+        drawInterpolatedFrame(1);
         return;
-      }
-
-      // Handle autoplay mode progression
-      if (isPlayingAutoRef.current) {
-        targetProgressRef.current += 0.0035;
-        if (targetProgressRef.current >= 1) {
-          targetProgressRef.current = 0; // Loop or hold
-        }
       }
 
       const target = targetProgressRef.current;
       const current = currentProgressRef.current;
 
-      // Responsive lerp smoothing factor:
-      // 0.20 delivers buttery smoothness without feeling laggy or delayed
-      const smoothingFactor = isPlayingAutoRef.current ? 0.08 : 0.20;
+      // Silky responsive smoothing: 0.14 provides effortless fluid response
+      const smoothingFactor = 0.14;
       let nextProgress = lerp(current, target, smoothingFactor);
 
-      // Snap when close to target to prevent perpetual sub-pixel computation
-      if (Math.abs(target - nextProgress) < 0.0006) {
+      // Snap when close to prevent perpetual micro-ticks
+      if (Math.abs(target - nextProgress) < 0.0003) {
         nextProgress = target;
       }
 
       currentProgressRef.current = nextProgress;
 
-      // Map smoothed progress to integer frame index [0 .. 29]
-      const targetFrameIndex = clamp(
-        Math.round(nextProgress * (TOTAL_FRAMES - 1)),
-        0,
-        TOTAL_FRAMES - 1
-      );
-
-      // Only re-draw to canvas when the frame index changes
-      if (targetFrameIndex !== currentDrawnIndexRef.current) {
-        drawFrame(targetFrameIndex);
+      // Redraw canvas whenever progress updates perceptibly
+      if (Math.abs(nextProgress - lastDrawnProgressRef.current) > 0.0003) {
+        drawInterpolatedFrame(nextProgress);
       }
 
-      // Update React HUD states only when progress changed meaningfully
-      if (Math.abs(nextProgress - lastRenderedProgress) > 0.004) {
+      // Update React state for clean text fade transitions
+      if (Math.abs(nextProgress - lastRenderedProgress) > 0.005) {
         lastRenderedProgress = nextProgress;
         setDisplayProgress(nextProgress);
-        setActiveFrameDisplay(targetFrameIndex + 1);
-
-        // Update active stage
-        if (nextProgress < 0.25) setActiveStageIndex(0);
-        else if (nextProgress < 0.50) setActiveStageIndex(1);
-        else if (nextProgress < 0.75) setActiveStageIndex(2);
-        else setActiveStageIndex(3);
       }
 
       animFrameRef.current = requestAnimationFrame(renderLoop);
@@ -270,9 +218,9 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [drawFrame]);
+  }, [drawInterpolatedFrame]);
 
-  // Native scroll listener: updates targetProgressRef without hijacking scroll
+  // Native scroll handler: recalculates normalized progress without hijacking scroll
   useEffect(() => {
     const handleScroll = () => {
       if (!containerRef.current) return;
@@ -284,14 +232,12 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const totalScrollable = containerHeight - windowHeight;
       if (totalScrollable <= 0) return;
 
-      // Scrolled distance within the 400vh pinned hero section
       const scrolled = -rect.top;
       const progress = clamp(scrolled / totalScrollable, 0, 1);
 
       targetProgressRef.current = progress;
     };
 
-    // Calculate initial scroll position immediately (handles page refresh halfway down)
     handleScroll();
     currentProgressRef.current = targetProgressRef.current;
 
@@ -304,52 +250,13 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     };
   }, [syncCanvasDimensions]);
 
-  // Autoplay demo controls
-  const togglePlayMode = () => {
-    const next = !isPlayingAuto;
-    setIsPlayingAuto(next);
-    isPlayingAutoRef.current = next;
-  };
+  // Phase 1 Intro text: visible at top, gently fades out as user begins scrolling (0% to 15%)
+  const introOpacity = clamp(1 - displayProgress / 0.14, 0, 1);
+  const introTranslateY = displayProgress * -30;
 
-  const jumpToBeginning = () => {
-    setIsPlayingAuto(false);
-    isPlayingAutoRef.current = false;
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-    targetProgressRef.current = 0;
-    currentProgressRef.current = 0;
-    drawFrame(0);
-  };
-
-  const jumpToCompletion = () => {
-    setIsPlayingAuto(false);
-    isPlayingAutoRef.current = false;
-    if (!containerRef.current) return;
-    const containerTop = containerRef.current.offsetTop;
-    const containerHeight = containerRef.current.offsetHeight;
-    const windowHeight = window.innerHeight;
-    window.scrollTo({
-      top: containerTop + (containerHeight - windowHeight),
-      behavior: 'smooth'
-    });
-    targetProgressRef.current = 1;
-  };
-
-  // Text layer opacities tied to normalized scroll progress
-  // Phase 1 Intro text: visible from 0 to 0.16, fully faded by 0.22
-  const introOpacity = clamp(1 - displayProgress / 0.16, 0, 1);
-  const introTranslateY = displayProgress * -35;
-
-  // Phase 2 Timeline HUD: visible during active construction (0.12 to 0.82)
-  const timelineOpacity =
-    displayProgress > 0.10 && displayProgress < 0.82
-      ? clamp((displayProgress - 0.10) / 0.05, 0, 1) * clamp((0.82 - displayProgress) / 0.05, 0, 1)
-      : 0;
-
-  // Phase 3 Completed Reveal text: fades in smoothly from 0.75 to 1.00
-  const revealOpacity = clamp((displayProgress - 0.75) / 0.18, 0, 1);
-  const revealTranslateY = (1 - revealOpacity) * 25;
+  // Phase 3 Completed Reveal text: fades in smoothly as the building finishes (80% to 100%)
+  const revealOpacity = clamp((displayProgress - 0.78) / 0.18, 0, 1);
+  const revealTranslateY = (1 - revealOpacity) * 20;
 
   return (
     <section
@@ -358,32 +265,28 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       className="relative w-full h-[400vh] bg-[#111315] select-none"
       aria-label="Ameer Heights Architectural Construction Timeline"
     >
-      {/* 100vh Sticky Viewport Presentation Window */}
+      {/* 100vh Sticky Viewport Window */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center">
-        {/* Architectural backdrop with warm subtle ambient gradient */}
+        {/* Subtle architectural backdrop */}
         <div className="absolute inset-0 bg-gradient-to-tr from-[#111315] via-[#151719] to-[#1E2124] z-0" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-[#B59A6A]/5 filter blur-[100px] living-ambient pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-[#B59A6A]/5 filter blur-[100px] pointer-events-none" />
 
-        {/* Construction Sequence Canvas Stage */}
+        {/* Pure Canvas Stage */}
         <div className="relative w-full h-full max-w-[1920px] mx-auto flex items-center justify-center z-10">
-          {/* HTML5 Canvas: 60/120fps hardware-accelerated frame sequence */}
+          {/* HTML5 Canvas: 60/120fps hardware-accelerated cross-faded frames */}
           <canvas
             ref={canvasRef}
-            className="w-full h-full object-contain pointer-events-none z-10 transition-opacity duration-300"
+            className="w-full h-full object-contain pointer-events-none z-10"
           />
 
-          {/* Immediate Fallback Frame 01 (visible immediately on page load before canvas first draw) */}
+          {/* Fallback Frame 01 (visible immediately on initial page load) */}
           {!isFrame01Loaded && (
             <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#111315]">
               <img
                 src={FRAME_PATHS[0]}
-                alt="Ameer Heights Tower 10 foundation ground frame"
+                alt="Ameer Heights Tower 10 foundation ground"
                 className="w-full h-full object-contain object-center opacity-90"
               />
-              <div className="absolute bottom-12 flex items-center gap-3 px-5 py-2.5 bg-[#181B1D]/90 border border-[#B59A6A]/30 text-xs font-mono tracking-widest text-[#B59A6A]">
-                <span className="w-2 h-2 rounded-full bg-[#B59A6A] animate-ping" />
-                <span>ARCHITECTURAL TIMELINE INITIALIZING</span>
-              </div>
             </div>
           )}
 
@@ -391,7 +294,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           <div className="absolute inset-0 bg-gradient-to-t from-[#111315] via-transparent to-[#111315]/60 pointer-events-none z-15" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#111315]/30 via-transparent to-[#111315]/30 pointer-events-none z-15" />
 
-          {/* Top Architectural Coordinate Badges */}
+          {/* Architectural Coordinate Badges */}
           <div className="absolute top-24 left-6 md:left-12 hidden sm:flex items-center gap-2 font-mono text-[10px] text-[#8C8C87] tracking-[0.25em] z-20">
             <span className="w-2 h-2 border border-[#B59A6A]" />
             <span>30.2585° N, 71.5149° E</span>
@@ -403,7 +306,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           </div>
 
           {/* ========================================================= */}
-          {/* PHASE 1: INITIAL HERO INTRO TEXT (Scroll 0% - 18%)        */}
+          {/* INITIAL HERO INTRO TEXT (Scroll 0% - 15%)                 */}
           {/* ========================================================= */}
           <div
             className="absolute inset-0 flex flex-col justify-between p-6 md:p-16 z-20 pointer-events-none transition-all duration-300"
@@ -445,60 +348,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           </div>
 
           {/* ========================================================= */}
-          {/* PHASE 2: ACTIVE CONSTRUCTION TIMELINE HUD (Scroll 12-82%) */}
-          {/* ========================================================= */}
-          <div
-            className="absolute bottom-8 left-6 right-6 md:left-12 md:right-12 z-20 pointer-events-none transition-all duration-300"
-            style={{
-              opacity: timelineOpacity,
-              visibility: timelineOpacity > 0.05 ? 'visible' : 'hidden'
-            }}
-          >
-            <div className="max-w-xl bg-[#111315]/90 backdrop-blur-md border border-[#B59A6A]/30 p-4 md:p-5 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#242526] pb-2.5 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#B59A6A] animate-pulse" />
-                  <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#B59A6A]">
-                    Construction Sequence
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 font-mono text-xs">
-                  <span className="text-[#B59A6A] font-medium">
-                    FRAME {String(activeFrameDisplay).padStart(2, '0')} / {TOTAL_FRAMES}
-                  </span>
-                  <span className="text-[#8C8C87]">({Math.round(displayProgress * 100)}%)</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-serif text-lg md:text-xl text-[#FAF9F6] tracking-wide">
-                    {STAGES[activeStageIndex].title}
-                  </p>
-                  <p className="text-xs text-[#8C8C87] mt-0.5">
-                    {STAGES[activeStageIndex].detail}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="font-mono text-2xl font-light text-[#B59A6A]">
-                    {STAGES[activeStageIndex].phase}
-                  </span>
-                  <span className="font-mono text-[10px] text-[#8C8C87] block">/ 04</span>
-                </div>
-              </div>
-
-              {/* Progress bar scrub indicator */}
-              <div className="w-full h-1 bg-[#242526] mt-3.5 relative overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#B59A6A] to-[#CBB488] transition-all duration-75"
-                  style={{ width: `${displayProgress * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ========================================================= */}
-          {/* PHASE 3: COMPLETED ARCHITECTURAL REVEAL (Scroll 75-100%)  */}
+          {/* COMPLETED ARCHITECTURAL REVEAL (Scroll 80% - 100%)       */}
           {/* ========================================================= */}
           <div
             className="absolute inset-0 flex flex-col justify-between p-6 md:p-16 z-20 pointer-events-none transition-all duration-500"
@@ -530,7 +380,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
                   </p>
                 </div>
 
-                {/* Confirmed Key Metrics Badges */}
+                {/* Key Metrics Badges */}
                 <div className="grid grid-cols-3 gap-2.5 pt-2">
                   <div className="p-3 bg-[#181B1D]/80 border border-[#242526] text-left">
                     <p className="font-serif text-xl font-medium text-[#FAF9F6]">30</p>
@@ -565,40 +415,8 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
               </div>
             </div>
           </div>
-
-          {/* Quick Scrub Controls (Floating discreetly on bottom-right for manual review) */}
-          <div className="absolute bottom-6 right-6 md:right-12 z-30 flex items-center gap-2 bg-[#181B1D]/80 backdrop-blur-md border border-[#242526] p-1.5 rounded-sm">
-            <button
-              type="button"
-              onClick={jumpToBeginning}
-              title="Reset to Ground Foundation (Frame 01)"
-              aria-label="Reset to Ground Foundation"
-              className="p-1.5 text-[#8C8C87] hover:text-[#FAF9F6] transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={togglePlayMode}
-              title={isPlayingAuto ? "Pause Autoplay" : "Play Construction Demo"}
-              aria-label={isPlayingAuto ? "Pause Autoplay" : "Play Construction Demo"}
-              className="p-1.5 text-[#8C8C87] hover:text-[#B59A6A] transition-colors"
-            >
-              {isPlayingAuto ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              type="button"
-              onClick={jumpToCompletion}
-              title="Jump to Completed Tower (Frame 30)"
-              aria-label="Jump to Completed Tower"
-              className="px-2 py-1 text-[10px] font-mono tracking-wider text-[#B59A6A] hover:text-[#FAF9F6] transition-colors"
-            >
-              REVEAL
-            </button>
-          </div>
         </div>
       </div>
     </section>
   );
 };
-
