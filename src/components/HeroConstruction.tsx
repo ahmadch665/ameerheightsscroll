@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { clamp, lerp } from '../utils/formatters';
 
@@ -23,6 +23,8 @@ interface Chapter {
   range: [number, number]; // [start, end]
   position: 'bottom-left' | 'top-left' | 'bottom-right' | 'top-right';
   align: 'left' | 'right';
+  focalLabel: string;
+  shotType: string;
   cta?: {
     type: 'scroll' | 'explore' | 'enquire';
     label: string;
@@ -41,6 +43,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.00, 0.16],
     position: 'bottom-left',
     align: 'left',
+    focalLabel: '24mm F/2.8',
+    shotType: 'EXTREME WIDE ESTABLISHING',
     cta: {
       type: 'scroll',
       label: 'SCROLL TO EXPLORE',
@@ -57,6 +61,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.16, 0.36],
     position: 'top-left',
     align: 'left',
+    focalLabel: '35mm F/2.8',
+    shotType: 'APPROACHING TOWER AXIS',
   },
   {
     id: 'residences',
@@ -69,6 +75,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.36, 0.56],
     position: 'bottom-right',
     align: 'right',
+    focalLabel: '50mm F/2.0',
+    shotType: 'STRUCTURAL FORM REVEAL',
   },
   {
     id: 'lifestyle',
@@ -81,6 +89,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.56, 0.76],
     position: 'bottom-left',
     align: 'left',
+    focalLabel: '70mm F/1.8',
+    shotType: 'BALCONY & RESIDENCE DETAIL',
   },
   {
     id: 'details',
@@ -93,6 +103,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.76, 0.90],
     position: 'top-right',
     align: 'right',
+    focalLabel: '50mm F/2.0',
+    shotType: 'PRECISION ARCHITECTURAL FINISH',
   },
   {
     id: 'destination',
@@ -105,6 +117,8 @@ const CHAPTERS: Chapter[] = [
     range: [0.90, 1.00],
     position: 'bottom-left',
     align: 'left',
+    focalLabel: '35mm F/2.8',
+    shotType: 'GRAND HERO ARCHITECTURE',
     cta: {
       type: 'enquire',
       label: 'ENQUIRE NOW',
@@ -112,70 +126,55 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-interface CameraWaypoint {
-  progress: number;
-  scale: number;
-  panX: number; // percentage offset of canvas width
-  panY: number; // percentage offset of canvas height
-  rotation: number; // degrees
-  focalLabel: string;
-  shotType: string;
-}
-
-const CAMERA_WAYPOINTS: CameraWaypoint[] = [
-  // 1. Extreme wide opening
-  { progress: 0.00, scale: 0.83, panX: -0.016, panY: 0.024, rotation: -0.38, focalLabel: '24mm F/2.8', shotType: 'EXTREME WIDE ESTABLISHING' },
-  // 2. Approaching tower & columns rising
-  { progress: 0.16, scale: 1.00, panX: 0.000, panY: 0.000, rotation: 0.00, focalLabel: '35mm F/2.8', shotType: 'APPROACHING TOWER AXIS' },
-  // 3. Monolithic concrete & slab ascension
-  { progress: 0.36, scale: 1.18, panX: 0.034, panY: -0.026, rotation: 0.32, focalLabel: '50mm F/2.0', shotType: 'STRUCTURAL FORM REVEAL' },
-  // 4. Balconies, timber louvers & suites detail
-  { progress: 0.56, scale: 1.28, panX: -0.038, panY: -0.044, rotation: -0.28, focalLabel: '70mm F/1.8', shotType: 'BALCONY & RESIDENCE DETAIL' },
-  // 5. Orbiting facade, canopy & street entrance
-  { progress: 0.76, scale: 1.15, panX: 0.026, panY: 0.020, rotation: 0.22, focalLabel: '50mm F/2.0', shotType: 'FACADE & URBAN ENTRANCE' },
-  // 6. Vertical ascent to crown
-  { progress: 0.90, scale: 1.08, panX: 0.008, panY: -0.014, rotation: -0.10, focalLabel: '40mm F/2.8', shotType: 'VERTICAL CROWN ASCENT' },
-  // 7. Settles into commanding hero shot
-  { progress: 1.00, scale: 1.02, panX: 0.000, panY: 0.000, rotation: 0.00, focalLabel: '35mm F/2.8', shotType: 'GRAND HERO ARCHITECTURE' },
-];
-
-/**
- * Calculates continuous, mathematically smooth camera state across scroll progress.
- * Uses quintic smootherstep (C2 continuous) to eliminate any angular abruptness.
- */
-function getCameraState(p: number): {
+interface CameraState {
   scale: number;
   panX: number;
   panY: number;
-  rotation: number;
-  focalLabel: string;
-  shotType: string;
-} {
+}
+
+/**
+ * Calculates continuous, mathematically stable camera state across scroll progress.
+ * Strictly deterministic function: scale = scaleForProgress(currentProgress).
+ * Zero transform accumulation, zero angular tilt wobble, zero horizontal jitter.
+ */
+function getCameraState(p: number): CameraState {
   const clamped = clamp(p, 0, 1);
 
-  let i = 0;
-  while (i < CAMERA_WAYPOINTS.length - 1 && clamped > CAMERA_WAYPOINTS[i + 1].progress) {
-    i++;
+  // Smooth architectural zoom trajectory:
+  // 0.00 -> 0.94 (Establishing site view)
+  // 0.25 -> 1.04 (Approach & lower columns)
+  // 0.55 -> 1.15 (Mid-rise balconies & details)
+  // 0.80 -> 1.10 (Vertical ascent towards crown)
+  // 1.00 -> 1.02 (Majestic complete tower framing)
+  let scale: number;
+  let panY: number;
+
+  if (clamped < 0.25) {
+    const t = clamped / 0.25;
+    const s = t * t * (3 - 2 * t);
+    scale = lerp(0.94, 1.04, s);
+    panY = lerp(0.020, 0.005, s);
+  } else if (clamped < 0.55) {
+    const t = (clamped - 0.25) / 0.30;
+    const s = t * t * (3 - 2 * t);
+    scale = lerp(1.04, 1.15, s);
+    panY = lerp(0.005, -0.025, s);
+  } else if (clamped < 0.80) {
+    const t = (clamped - 0.55) / 0.25;
+    const s = t * t * (3 - 2 * t);
+    scale = lerp(1.15, 1.10, s);
+    panY = lerp(-0.025, -0.012, s);
+  } else {
+    const t = (clamped - 0.80) / 0.20;
+    const s = t * t * (3 - 2 * t);
+    scale = lerp(1.10, 1.02, s);
+    panY = lerp(-0.012, 0.000, s);
   }
-
-  const w0 = CAMERA_WAYPOINTS[i];
-  const w1 = CAMERA_WAYPOINTS[Math.min(i + 1, CAMERA_WAYPOINTS.length - 1)];
-
-  if (w0.progress === w1.progress) {
-    return { ...w0 };
-  }
-
-  const linearT = clamp((clamped - w0.progress) / (w1.progress - w0.progress), 0, 1);
-  // Quintic smootherstep: 6t^5 - 15t^4 + 10t^3
-  const smoothT = linearT * linearT * linearT * (linearT * (linearT * 6 - 15) + 10);
 
   return {
-    scale: lerp(w0.scale, w1.scale, smoothT),
-    panX: lerp(w0.panX, w1.panX, smoothT),
-    panY: lerp(w0.panY, w1.panY, smoothT),
-    rotation: lerp(w0.rotation, w1.rotation, smoothT),
-    focalLabel: linearT > 0.5 ? w1.focalLabel : w0.focalLabel,
-    shotType: linearT > 0.5 ? w1.shotType : w0.shotType,
+    scale,
+    panX: 0,
+    panY,
   };
 }
 
@@ -183,19 +182,29 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number | null>(null);
+  const timelineBarRef = useRef<HTMLDivElement>(null);
 
   // Preloaded image elements in memory
   const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
   const loadedFlagsRef = useRef<boolean[]>(new Array(TOTAL_FRAMES).fill(false));
 
-  // High-precision scroll & camera tracking
+  // High-precision scroll & animation tracking (Mutable refs outside React render cycle)
   const targetProgressRef = useRef(0);
   const currentProgressRef = useRef(0);
   const lastDrawnProgressRef = useRef(-1);
   const isReducedMotionRef = useRef(false);
 
-  // UI state for synchronized text overlay transitions & HUD telemetry
-  const [displayProgress, setDisplayProgress] = useState(0);
+  // Cached scroll dimensions (Eliminates repeated getBoundingClientRect / layout thrashing)
+  const scrollMetricsRef = useRef({
+    containerTop: 0,
+    totalScrollable: 1,
+  });
+
+  // Track active chapter index in ref to guard React state updates
+  const activeChapterRef = useRef(0);
+
+  // React state ONLY updates at deliberate story points when active chapter changes
+  const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [isFrame01Loaded, setIsFrame01Loaded] = useState(false);
 
   // Find nearest loaded and decoded frame if a specific frame is not ready
@@ -220,8 +229,8 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return null;
   }, []);
 
-  // Ultra-smooth 60fps cinematic camera frame rendering on HTML5 canvas
-  // Guarantees 100% sharp architectural details with zero double-vision or scale shearing
+  // 60fps cinematic camera frame rendering on HTML5 canvas
+  // Uses floating-point subpixel coordinates to eliminate 1px integer rounding jitter
   const drawInterpolatedFrame = useCallback(
     (progress: number) => {
       const canvas = canvasRef.current;
@@ -236,17 +245,17 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
       const clampedProgress = clamp(progress, 0, 1);
       const continuousFrame = clampedProgress * (TOTAL_FRAMES - 1);
-      const baseIndex = Math.floor(continuousFrame);
+      const baseIndex = clamp(Math.floor(continuousFrame), 0, TOTAL_FRAMES - 1);
       const nextIndex = Math.min(baseIndex + 1, TOTAL_FRAMES - 1);
       const blendFactor = continuousFrame - baseIndex;
 
       const baseImg = getNearestLoadedImage(baseIndex);
       if (!baseImg || !baseImg.complete || baseImg.naturalWidth === 0) return;
 
-      // Compute virtual camera parameters
+      // Compute virtual camera parameters deterministically
       const isReduced = isReducedMotionRef.current;
       const camera = isReduced
-        ? { scale: 1.0, panX: 0, panY: 0, rotation: 0, focalLabel: '35mm F/2.8', shotType: 'STABILIZED' }
+        ? { scale: 1.0, panX: 0, panY: 0 }
         : getCameraState(clampedProgress);
 
       // Natural contain-scaling preserving exact building proportions
@@ -255,9 +264,9 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const fitScale = Math.min(cw / imgW, ch / imgH);
       const effectiveScale = fitScale * camera.scale;
 
-      // Center point transformed by virtual camera pan
-      const centerX = Math.round(cw / 2 + cw * camera.panX);
-      const centerY = Math.round(ch / 2 + ch * camera.panY);
+      // Sub-pixel floating point positioning (prevents 1px integer rounding stutter)
+      const centerX = cw / 2 + cw * camera.panX;
+      const centerY = ch / 2 + ch * camera.panY;
 
       // Unified architectural backdrop fill
       ctx.fillStyle = '#111315';
@@ -266,29 +275,26 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       // Apply camera transform matrix
       ctx.save();
       ctx.translate(centerX, centerY);
-      if (camera.rotation !== 0) {
-        ctx.rotate((camera.rotation * Math.PI) / 180);
-      }
 
-      // CRITICAL: Render images at identical geometry to guarantee razor-sharp edges
-      const dw = Math.round(imgW * effectiveScale);
-      const dh = Math.round(imgH * effectiveScale);
-      const dx = Math.round(-dw / 2);
-      const dy = Math.round(-dh / 2);
+      // CRITICAL: Floating-point dimensions render smoothly without integer snapping
+      const dw = imgW * effectiveScale;
+      const dh = imgH * effectiveScale;
+      const dx = -dw / 2;
+      const dy = -dh / 2;
 
       const nextImg = baseIndex !== nextIndex ? getNearestLoadedImage(nextIndex) : null;
 
-      if (!nextImg || blendFactor < 0.05) {
+      if (!nextImg || blendFactor < 0.06) {
         // Pure single sharp frame
         ctx.globalAlpha = 1.0;
         ctx.drawImage(baseImg, dx, dy, dw, dh);
-      } else if (blendFactor > 0.95) {
+      } else if (blendFactor > 0.94) {
         // Pure next sharp frame
         ctx.globalAlpha = 1.0;
         ctx.drawImage(nextImg, dx, dy, dw, dh);
       } else {
-        // Perfectly registered crossfade with smoothstep easing (zero scale disparity or blur)
-        const t = (blendFactor - 0.05) / 0.90;
+        // Crossfade with smoothstep easing at identical geometric coordinates (zero blur, zero ghosting)
+        const t = (blendFactor - 0.06) / 0.88;
         const smoothT = t * t * (3 - 2 * t);
 
         ctx.globalAlpha = 1.0;
@@ -425,9 +431,10 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     };
   }, [syncCanvasDimensions, drawInterpolatedFrame]);
 
-  // Silky 60fps requestAnimationFrame loop with responsive exponential smoothing
+  // Single dedicated requestAnimationFrame animation loop
+  // Smoothly interpolates currentProgress -> targetProgress
+  // Direct DOM updates for continuous elements, React state ONLY for discrete chapter transitions
   useEffect(() => {
-    let lastRenderedProgress = -1;
     let isRunning = true;
 
     const renderLoop = () => {
@@ -441,27 +448,44 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const target = targetProgressRef.current;
       const current = currentProgressRef.current;
 
-      // Tight, responsive smoothing factor (0.12): eliminates micro-jank without delayed floatiness
       const delta = target - current;
       let nextProgress: number;
 
-      if (Math.abs(delta) < 0.0001) {
+      if (Math.abs(delta) < 0.00015) {
         nextProgress = target;
       } else {
-        nextProgress = current + delta * 0.12;
+        // Responsive smoothing factor (0.20): follows wheel/touch with zero delay and zero jagged steps
+        nextProgress = current + delta * 0.20;
       }
 
       currentProgressRef.current = nextProgress;
 
-      // Draw canvas at native 60fps when motion occurs
+      // 1. Render architectural canvas when progress moves
       if (Math.abs(nextProgress - lastDrawnProgressRef.current) > 0.0001) {
         drawInterpolatedFrame(nextProgress);
       }
 
-      // Throttle React state updates to meaningful visual delta (0.002) to avoid unnecessary DOM reconciliation
-      if (Math.abs(nextProgress - lastRenderedProgress) > 0.002) {
-        lastRenderedProgress = nextProgress;
-        setDisplayProgress(nextProgress);
+      // 2. Update timeline progress bar directly via DOM transform (0 React re-renders)
+      if (timelineBarRef.current) {
+        timelineBarRef.current.style.transform = `scaleY(${nextProgress})`;
+      }
+
+      // 3. Deliberate story points: update active chapter ONLY when boundary is crossed
+      let activeIdx = 0;
+      for (let i = 0; i < CHAPTERS.length; i++) {
+        const [start, end] = CHAPTERS[i].range;
+        if (nextProgress >= start && nextProgress < end) {
+          activeIdx = i;
+          break;
+        }
+      }
+      if (nextProgress >= 0.9) {
+        activeIdx = CHAPTERS.length - 1;
+      }
+
+      if (activeIdx !== activeChapterRef.current) {
+        activeChapterRef.current = activeIdx;
+        setActiveChapterIndex(activeIdx);
       }
 
       animFrameRef.current = requestAnimationFrame(renderLoop);
@@ -477,163 +501,61 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     };
   }, [drawInterpolatedFrame]);
 
-  // Native scroll handler: recalculates normalized progress without hijacking scroll
+  // Native scroll handler: ONLY calculates targetProgress from cached metrics
+  // Zero layout thrashing, zero getBoundingClientRect in scroll event, zero React state calls
   useEffect(() => {
-    const handleScroll = () => {
+    const updateScrollMetrics = () => {
       if (!containerRef.current) return;
-
       const rect = containerRef.current.getBoundingClientRect();
+      const scrollTop = window.scrollY || window.pageYOffset || 0;
+      const containerTop = rect.top + scrollTop;
       const containerHeight = containerRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
+      const totalScrollable = Math.max(containerHeight - windowHeight, 1);
 
-      const totalScrollable = containerHeight - windowHeight;
-      if (totalScrollable <= 0) return;
+      scrollMetricsRef.current = {
+        containerTop,
+        totalScrollable,
+      };
+    };
 
-      const scrolled = -rect.top;
-      const progress = clamp(scrolled / totalScrollable, 0, 1);
+    updateScrollMetrics();
 
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || window.pageYOffset || 0;
+      const { containerTop, totalScrollable } = scrollMetricsRef.current;
+      const progress = clamp((scrollTop - containerTop) / totalScrollable, 0, 1);
       targetProgressRef.current = progress;
     };
 
     handleScroll();
     currentProgressRef.current = targetProgressRef.current;
 
+    const handleResize = () => {
+      updateScrollMetrics();
+      syncCanvasDimensions();
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', syncCanvasDimensions, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', syncCanvasDimensions);
+      window.removeEventListener('resize', handleResize);
     };
   }, [syncCanvasDimensions]);
 
-  // Smooth click navigation to any chapter
+  // Smooth click navigation to any chapter using cached metrics
   const scrollToChapter = useCallback((index: number) => {
     if (!containerRef.current) return;
     const targetChapter = CHAPTERS[index];
     const midpoint = (targetChapter.range[0] + targetChapter.range[1]) / 2;
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const containerTop = window.scrollY + containerRect.top;
-    const containerHeight = containerRef.current.offsetHeight;
-    const windowHeight = window.innerHeight;
-    const targetScroll = containerTop + midpoint * (containerHeight - windowHeight);
+    const { containerTop, totalScrollable } = scrollMetricsRef.current;
+    const targetScroll = containerTop + midpoint * totalScrollable;
     window.scrollTo({ top: targetScroll, behavior: 'smooth' });
   }, []);
 
-  // Determine active chapter index
-  const activeChapterIndex = useMemo(() => {
-    for (let i = 0; i < CHAPTERS.length; i++) {
-      const [start, end] = CHAPTERS[i].range;
-      if (displayProgress >= start && displayProgress < end) {
-        return i;
-      }
-    }
-    return displayProgress >= 0.9 ? CHAPTERS.length - 1 : 0;
-  }, [displayProgress]);
-
-  // Active camera state for synchronized UI depth & parallax
-  const currentCameraState = useMemo(() => {
-    return getCameraState(displayProgress);
-  }, [displayProgress]);
-
-  // Compute smooth opacity, scale, and vertical translation for each chapter (zero CSS blur, lightweight)
-  const getChapterStyle = useCallback(
-    (index: number) => {
-      const ch = CHAPTERS[index];
-      const p = displayProgress;
-      const [start, end] = ch.range;
-      const isReduced = isReducedMotionRef.current;
-
-      const fadeDelta = 0.035;
-
-      let opacity = 0;
-      let translateY = 12; // emerges softly from below
-      let scale = 0.99;
-
-      if (index === 0) {
-        // Chapter 01: starts at full opacity, fades out near end
-        const fadeOutStart = end - fadeDelta;
-        if (p <= fadeOutStart) {
-          opacity = 1;
-          translateY = 0;
-          scale = 1.0;
-        } else if (p < end) {
-          const t = (p - fadeOutStart) / fadeDelta;
-          opacity = 1 - t;
-          translateY = -t * 12; // moves slightly upward as it leaves
-          scale = 1.0 + t * 0.01;
-        } else {
-          opacity = 0;
-          translateY = -12;
-          scale = 1.01;
-        }
-      } else if (index === CHAPTERS.length - 1) {
-        // Chapter 06 (Destination): fades in near start, stays at full opacity until end
-        const fadeInStart = start - 0.015;
-        const fadeInEnd = start + fadeDelta;
-        if (p < fadeInStart) {
-          opacity = 0;
-          translateY = 12;
-          scale = 0.99;
-        } else if (p < fadeInEnd) {
-          const t = (p - fadeInStart) / (fadeInEnd - fadeInStart);
-          opacity = t;
-          translateY = (1 - t) * 12;
-          scale = 0.99 + t * 0.01;
-        } else {
-          opacity = 1;
-          translateY = 0;
-          scale = 1.0;
-        }
-      } else {
-        // Intermediate chapters: subtle entry, dwell, subtle exit
-        const fadeInStart = start - 0.015;
-        const fadeInEnd = start + fadeDelta;
-        const fadeOutStart = end - fadeDelta;
-        const fadeOutEnd = end + 0.015;
-
-        if (p < fadeInStart) {
-          opacity = 0;
-          translateY = 12;
-          scale = 0.99;
-        } else if (p < fadeInEnd) {
-          const t = (p - fadeInStart) / (fadeInEnd - fadeInStart);
-          opacity = t;
-          translateY = (1 - t) * 12;
-          scale = 0.99 + t * 0.01;
-        } else if (p <= fadeOutStart) {
-          opacity = 1;
-          translateY = 0;
-          scale = 1.0;
-        } else if (p < fadeOutEnd) {
-          const t = (p - fadeOutStart) / (fadeOutEnd - fadeOutStart);
-          opacity = 1 - t;
-          translateY = -t * 12; // moves slightly upward as it leaves
-          scale = 1.0 + t * 0.01;
-        } else {
-          opacity = 0;
-          translateY = -12;
-          scale = 1.01;
-        }
-      }
-
-      if (isReduced) {
-        translateY = 0;
-        scale = 1.0;
-      }
-
-      return {
-        opacity: clamp(opacity, 0, 1),
-        translateY,
-        scale,
-        isVisible: opacity > 0.01,
-        isInteractive: opacity > 0.6,
-      };
-    },
-    [displayProgress]
-  );
-
-  const getPositionClasses = (position: Chapter['position'], align: Chapter['align']) => {
+  const getPositionClasses = (position: Chapter['position']) => {
     switch (position) {
       case 'bottom-left':
         return 'left-6 sm:left-12 md:left-16 lg:left-24 bottom-12 sm:bottom-16 md:bottom-20 text-left items-start';
@@ -648,8 +570,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     }
   };
 
-  const textParallaxX = currentCameraState.panX * 12;
-  const textParallaxY = currentCameraState.panY * 12;
+  const currentChapter = CHAPTERS[activeChapterIndex] || CHAPTERS[0];
 
   return (
     <section
@@ -660,25 +581,17 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     >
       {/* 100vh Sticky Viewport Window */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center">
-        {/* Layer 1: Background Atmospheric Depth & Horizon Glow */}
+        {/* Layer 1: Background Atmospheric Depth (Static, zero compositing churn) */}
         <div className="absolute inset-0 bg-gradient-to-tr from-[#111315] via-[#151719] to-[#1E2124] z-0" />
 
-        {/* Blueprint Coordinate Matrix (Subtle background texture) */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-15 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px]"
-          style={{
-            transform: `translate3d(${-currentCameraState.panX * 20}px, ${-currentCameraState.panY * 20}px, 0)`,
-          }}
-        />
+        {/* Blueprint Coordinate Matrix (Static architectural background) */}
+        <div className="absolute inset-0 pointer-events-none opacity-15 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px]" />
 
-        {/* Ambient radial atmospheric illumination (Zero blur filter for 60fps performance) */}
+        {/* Ambient radial atmospheric illumination (Static background) */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
           style={{
             background: 'radial-gradient(circle, rgba(181, 154, 106, 0.07) 0%, rgba(181, 154, 106, 0.02) 40%, transparent 70%)',
-            transform: `translate3d(calc(-50% + ${-currentCameraState.panX * 30}px), calc(-50% + ${-currentCameraState.panY * 30}px), 0) scale(${
-              1 + (currentCameraState.scale - 1) * 0.2
-            })`,
           }}
         />
 
@@ -688,33 +601,22 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           <canvas
             ref={canvasRef}
             className="w-full h-full object-contain pointer-events-none z-10"
+            aria-label="Ameer Heights Tower 10 3D Construction Animation"
           />
 
-          {/* Fallback Frame 01 (visible immediately on initial page load) */}
+          {/* Fallback & Initial Loading State */}
           {!isFrame01Loaded && (
-            <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#111315]">
-              <img
-                src={FRAME_PATHS[0]}
-                alt="Ameer Heights Tower 10 foundation ground"
-                className="w-full h-full object-contain object-center opacity-90"
-              />
+            <div className="absolute inset-0 flex items-center justify-center bg-[#111315] z-30">
+              <div className="w-8 h-8 rounded-full border border-[#B59A6A]/30 border-t-[#B59A6A] animate-spin" />
             </div>
           )}
 
-          {/* Layer 3: Foreground Cinematic Depth Layers (No expensive blend modes) */}
-          {/* Subtle anamorphic light sheen that shifts gently with camera */}
+          {/* Layer 3: Foreground Cinematic Depth Layers (Static, no expensive blend modes) */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden z-15 opacity-25">
-            <div
-              className="absolute w-[200%] h-[1px] bg-gradient-to-r from-transparent via-[#B59A6A]/30 to-transparent top-1/2 left-[-50%]"
-              style={{
-                transform: `rotate(${-14 + currentCameraState.rotation * 12}deg) translateY(${
-                  currentCameraState.panY * 160
-                }px)`,
-              }}
-            />
+            <div className="absolute w-[200%] h-[1px] bg-gradient-to-r from-transparent via-[#B59A6A]/30 to-transparent top-1/2 left-[-50%] -rotate-12" />
           </div>
 
-          {/* Dynamic architectural vignette: subtle contrast adjustment behind the overall scene, never a visible container */}
+          {/* Dynamic architectural vignette: subtle contrast adjustment */}
           <div
             className="absolute inset-0 pointer-events-none z-15"
             style={{
@@ -733,39 +635,44 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
             <span>30.2585° N, 71.5149° E</span>
           </div>
 
-          {/* Live Cinematic Camera Telemetry HUD (Unboxed) */}
+          {/* Live Cinematic Camera Telemetry HUD (Updates cleanly on chapter transitions) */}
           <div
-            className="absolute top-28 right-6 md:right-12 hidden sm:flex items-center gap-2 font-mono text-[9px] text-[#B59A6A]/80 tracking-[0.25em] z-20 pointer-events-none"
+            className="absolute top-28 right-6 md:right-12 hidden sm:flex items-center gap-2 font-mono text-[9px] text-[#B59A6A]/80 tracking-[0.25em] z-20 pointer-events-none transition-opacity duration-300"
             style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A] animate-pulse" />
             <span className="text-[#8C8C87]">CAM:</span>
-            <span>{currentCameraState.focalLabel}</span>
+            <span>{currentChapter.focalLabel}</span>
             <span className="text-[#8C8C87]/40">·</span>
-            <span className="text-[#D8D3CA]/80 hidden md:inline">{currentCameraState.shotType}</span>
+            <span className="text-[#D8D3CA]/80 hidden md:inline">{currentChapter.shotType}</span>
           </div>
 
           {/* ========================================================= */}
-          {/* EDITORIAL FLOATING TYPOGRAPHY (Zero Containers / Cards)   */}
+          {/* EDITORIAL FLOATING TYPOGRAPHY                             */}
+          {/* Stable overlay: Only transitions at deliberate story points*/}
+          {/* Zero continuous recalculation or scale during scrolling   */}
           {/* ========================================================= */}
           {CHAPTERS.map((chapter, idx) => {
-            const { opacity, translateY, scale, isVisible, isInteractive } = getChapterStyle(idx);
-            if (!isVisible) return null;
-
-            const posClasses = getPositionClasses(chapter.position, chapter.align);
+            const isActive = idx === activeChapterIndex;
+            const isPast = idx < activeChapterIndex;
+            const posClasses = getPositionClasses(chapter.position);
 
             return (
               <div
                 key={chapter.id}
-                className={`absolute ${posClasses} flex flex-col z-25 max-w-[88vw] sm:max-w-xl md:max-w-2xl select-none transition-all duration-75 ${
-                  isInteractive ? 'pointer-events-auto' : 'pointer-events-none'
+                className={`absolute ${posClasses} flex flex-col z-25 max-w-[88vw] sm:max-w-xl md:max-w-2xl select-none transition-all duration-300 ease-out will-change-[transform,opacity] ${
+                  isActive
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none'
                 }`}
                 style={{
-                  opacity,
-                  transform: `translate3d(${textParallaxX}px, ${translateY + textParallaxY}px, 0) scale(${scale})`,
-                  willChange: isInteractive ? 'transform, opacity' : 'auto',
+                  transform: isActive
+                    ? 'translate3d(0, 0, 0)'
+                    : isPast
+                    ? 'translate3d(0, -12px, 0)'
+                    : 'translate3d(0, 12px, 0)',
                 }}
-                aria-hidden={!isInteractive}
+                aria-hidden={!isActive}
               >
                 {/* Secondary Chapter Label */}
                 <div
@@ -885,11 +792,12 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
               );
             })}
 
-            {/* Thin vertical hairline timeline tracker */}
+            {/* Thin vertical hairline timeline tracker (Direct GPU transform, 0 re-renders) */}
             <div className="w-[1px] h-12 bg-white/15 self-end mr-[5px] mt-1 relative overflow-hidden">
               <div
-                className="w-full bg-[#B59A6A] transition-all duration-100"
-                style={{ height: `${displayProgress * 100}%` }}
+                ref={timelineBarRef}
+                className="w-full bg-[#B59A6A] h-full origin-top"
+                style={{ transform: 'scaleY(0)', willChange: 'transform' }}
               />
             </div>
           </nav>
