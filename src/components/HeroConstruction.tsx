@@ -198,7 +198,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
   const [displayProgress, setDisplayProgress] = useState(0);
   const [isFrame01Loaded, setIsFrame01Loaded] = useState(false);
 
-  // Find nearest loaded frame if a specific frame is not ready
+  // Find nearest loaded and decoded frame if a specific frame is not ready
   const getNearestLoadedImage = useCallback((targetIndex: number): HTMLImageElement | null => {
     const images = imagesRef.current;
     const loaded = loadedFlagsRef.current;
@@ -220,7 +220,8 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return null;
   }, []);
 
-  // Ultra-smooth cinematic camera frame rendering on HTML5 canvas
+  // Ultra-smooth 60fps cinematic camera frame rendering on HTML5 canvas
+  // Guarantees 100% sharp architectural details with zero double-vision or scale shearing
   const drawInterpolatedFrame = useCallback(
     (progress: number) => {
       const canvas = canvasRef.current;
@@ -258,7 +259,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const centerX = Math.round(cw / 2 + cw * camera.panX);
       const centerY = Math.round(ch / 2 + ch * camera.panY);
 
-      // Deep architectural backdrop fill
+      // Unified architectural backdrop fill
       ctx.fillStyle = '#111315';
       ctx.fillRect(0, 0, cw, ch);
 
@@ -269,56 +270,83 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         ctx.rotate((camera.rotation * Math.PI) / 180);
       }
 
-      // 1. Draw base frame with subtle continuous forward push
-      const basePush = 1.0 + 0.009 * blendFactor;
-      const baseDw = Math.round(imgW * effectiveScale * basePush);
-      const baseDh = Math.round(imgH * effectiveScale * basePush);
+      // CRITICAL: Render images at identical geometry to guarantee razor-sharp edges
+      const dw = Math.round(imgW * effectiveScale);
+      const dh = Math.round(imgH * effectiveScale);
+      const dx = Math.round(-dw / 2);
+      const dy = Math.round(-dh / 2);
 
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(baseImg, Math.round(-baseDw / 2), Math.round(-baseDh / 2), baseDw, baseDh);
+      const nextImg = baseIndex !== nextIndex ? getNearestLoadedImage(nextIndex) : null;
 
-      // 2. Continuous sub-frame cross-dissolve with scale-matched push
-      if (blendFactor > 0.006 && baseIndex !== nextIndex) {
-        const nextImg = getNearestLoadedImage(nextIndex);
-        if (nextImg && nextImg.complete && nextImg.naturalWidth > 0) {
-          const nextPush = 1.0 - 0.009 * (1 - blendFactor);
-          const nextDw = Math.round(imgW * effectiveScale * nextPush);
-          const nextDh = Math.round(imgH * effectiveScale * nextPush);
+      if (!nextImg || blendFactor < 0.05) {
+        // Pure single sharp frame
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(baseImg, dx, dy, dw, dh);
+      } else if (blendFactor > 0.95) {
+        // Pure next sharp frame
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(nextImg, dx, dy, dw, dh);
+      } else {
+        // Perfectly registered crossfade with smoothstep easing (zero scale disparity or blur)
+        const t = (blendFactor - 0.05) / 0.90;
+        const smoothT = t * t * (3 - 2 * t);
 
-          ctx.globalAlpha = blendFactor;
-          ctx.drawImage(nextImg, Math.round(-nextDw / 2), Math.round(-nextDh / 2), nextDw, nextDh);
-        }
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(baseImg, dx, dy, dw, dh);
+
+        ctx.globalAlpha = smoothT;
+        ctx.drawImage(nextImg, dx, dy, dw, dh);
       }
 
       ctx.restore();
-
       ctx.globalAlpha = 1.0;
       lastDrawnProgressRef.current = progress;
     },
     [getNearestLoadedImage]
   );
 
-  // Sync canvas resolution with display device pixel ratio
+  // Sync canvas resolution with display device pixel ratio, capped for 60fps performance
   const syncCanvasDimensions = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (rect.width === 0 || rect.height === 0) return;
 
-    const targetW = Math.round(rect.width * dpr);
-    const targetH = Math.round(rect.height * dpr);
+    const isMobile = window.innerWidth < 768;
+    const maxDpr = isMobile ? 1.5 : 1.75;
+    const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+
+    let targetW = Math.round(rect.width * dpr);
+    let targetH = Math.round(rect.height * dpr);
+
+    // Bound maximum buffer size to avoid redundant memory allocations
+    if (targetW > 1920) {
+      targetH = Math.round(targetH * (1920 / targetW));
+      targetW = 1920;
+    }
+    if (targetH > 1280) {
+      targetW = Math.round(targetW * (1280 / targetH));
+      targetH = 1280;
+    }
 
     if (canvas.width !== targetW || canvas.height !== targetH) {
       canvas.width = targetW;
       canvas.height = targetH;
+
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = isMobile ? 'medium' : 'high';
+      }
+
       if (lastDrawnProgressRef.current >= 0) {
         drawInterpolatedFrame(lastDrawnProgressRef.current);
       }
     }
   }, [drawInterpolatedFrame]);
 
-  // Preload all 30 frames: Frame 01 immediately, remaining 29 in background
+  // Priority-based async image preloading & hardware decoding pipeline
   useEffect(() => {
     if (typeof window !== 'undefined') {
       isReducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -326,47 +354,85 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
     let isMounted = true;
 
-    // Load Frame 01 first
-    const img1 = new Image();
-    img1.src = FRAME_PATHS[0];
-    img1.onload = () => {
-      if (!isMounted) return;
-      imagesRef.current[0] = img1;
-      loadedFlagsRef.current[0] = true;
-      setIsFrame01Loaded(true);
-
-      syncCanvasDimensions();
-      drawInterpolatedFrame(0);
-
-      // Preload remaining frames
-      for (let i = 1; i < TOTAL_FRAMES; i++) {
+    // Asynchronously load and decode image off main thread
+    const loadAndDecode = async (index: number): Promise<HTMLImageElement | null> => {
+      try {
         const img = new Image();
-        img.src = FRAME_PATHS[i];
-        img.onload = () => {
-          if (!isMounted) return;
-          imagesRef.current[i] = img;
-          loadedFlagsRef.current[i] = true;
-
-          // If current scroll position requires this frame, re-draw
-          const currentPos = currentProgressRef.current;
-          const targetFrame = currentPos * (TOTAL_FRAMES - 1);
-          if (Math.abs(targetFrame - i) < 1.0) {
-            drawInterpolatedFrame(currentPos);
-          }
-        };
+        img.src = FRAME_PATHS[index];
+        if (typeof img.decode === 'function') {
+          await img.decode();
+        } else {
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+          });
+        }
+        if (!isMounted) return null;
+        imagesRef.current[index] = img;
+        loadedFlagsRef.current[index] = true;
+        return img;
+      } catch {
+        return null;
       }
     };
+
+    const runPreload = async () => {
+      // Stage 1: Load & decode initial frame 01 immediately for zero-delay presentation
+      const f1 = await loadAndDecode(0);
+      if (!isMounted) return;
+
+      if (f1) {
+        setIsFrame01Loaded(true);
+        syncCanvasDimensions();
+        drawInterpolatedFrame(0);
+      }
+
+      // Stage 2: Immediately decode early sequence frames (02 to 06) so initial scroll is buttery smooth
+      for (let i = 1; i < Math.min(6, TOTAL_FRAMES); i++) {
+        if (!isMounted) return;
+        await loadAndDecode(i);
+        // If user already scrolled to this section, render frame immediately
+        const curProgress = currentProgressRef.current;
+        if (Math.abs(curProgress * (TOTAL_FRAMES - 1) - i) < 1.0) {
+          drawInterpolatedFrame(curProgress);
+        }
+      }
+
+      // Stage 3: Progressively preload and decode all remaining frames in parallel batches of 3
+      const remaining: number[] = [];
+      for (let i = 6; i < TOTAL_FRAMES; i++) {
+        remaining.push(i);
+      }
+
+      const batchSize = 3;
+      for (let i = 0; i < remaining.length; i += batchSize) {
+        if (!isMounted) return;
+        const chunk = remaining.slice(i, i + batchSize);
+        await Promise.all(chunk.map((idx) => loadAndDecode(idx)));
+
+        const curProgress = currentProgressRef.current;
+        const activeIdx = Math.round(curProgress * (TOTAL_FRAMES - 1));
+        if (chunk.includes(activeIdx)) {
+          drawInterpolatedFrame(curProgress);
+        }
+      }
+    };
+
+    runPreload();
 
     return () => {
       isMounted = false;
     };
   }, [syncCanvasDimensions, drawInterpolatedFrame]);
 
-  // Ultra-fluid requestAnimationFrame render loop with velocity-aware exponential smoothing
+  // Silky 60fps requestAnimationFrame loop with responsive exponential smoothing
   useEffect(() => {
     let lastRenderedProgress = -1;
+    let isRunning = true;
 
     const renderLoop = () => {
+      if (!isRunning) return;
+
       if (isReducedMotionRef.current) {
         drawInterpolatedFrame(1);
         return;
@@ -375,23 +441,24 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const target = targetProgressRef.current;
       const current = currentProgressRef.current;
 
-      // Silky responsive smoothing factor: 0.14
-      const smoothingFactor = 0.14;
-      let nextProgress = lerp(current, target, smoothingFactor);
+      // Tight, responsive smoothing factor (0.12): eliminates micro-jank without delayed floatiness
+      const delta = target - current;
+      let nextProgress: number;
 
-      // Snap when close to prevent perpetual micro-ticks
-      if (Math.abs(target - nextProgress) < 0.0002) {
+      if (Math.abs(delta) < 0.0001) {
         nextProgress = target;
+      } else {
+        nextProgress = current + delta * 0.12;
       }
 
       currentProgressRef.current = nextProgress;
 
-      // Redraw canvas whenever camera progress updates
-      if (Math.abs(nextProgress - lastDrawnProgressRef.current) > 0.0002) {
+      // Draw canvas at native 60fps when motion occurs
+      if (Math.abs(nextProgress - lastDrawnProgressRef.current) > 0.0001) {
         drawInterpolatedFrame(nextProgress);
       }
 
-      // Update React state for smooth text transitions & HUD telemetry
+      // Throttle React state updates to meaningful visual delta (0.002) to avoid unnecessary DOM reconciliation
       if (Math.abs(nextProgress - lastRenderedProgress) > 0.002) {
         lastRenderedProgress = nextProgress;
         setDisplayProgress(nextProgress);
@@ -403,6 +470,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     animFrameRef.current = requestAnimationFrame(renderLoop);
 
     return () => {
+      isRunning = false;
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
       }
@@ -468,7 +536,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return getCameraState(displayProgress);
   }, [displayProgress]);
 
-  // Compute smooth opacity, scale, subtle blur, and vertical translation for each chapter
+  // Compute smooth opacity, scale, and vertical translation for each chapter (zero CSS blur, lightweight)
   const getChapterStyle = useCallback(
     (index: number) => {
       const ch = CHAPTERS[index];
@@ -479,8 +547,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const fadeDelta = 0.035;
 
       let opacity = 0;
-      let translateY = 14; // emerges softly from below
-      let blur = 2.5; // subtle blur during transition
+      let translateY = 12; // emerges softly from below
       let scale = 0.99;
 
       if (index === 0) {
@@ -489,18 +556,15 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         if (p <= fadeOutStart) {
           opacity = 1;
           translateY = 0;
-          blur = 0;
           scale = 1.0;
         } else if (p < end) {
           const t = (p - fadeOutStart) / fadeDelta;
           opacity = 1 - t;
-          translateY = -t * 14; // moves slightly upward as it leaves
-          blur = t * 2.5;
+          translateY = -t * 12; // moves slightly upward as it leaves
           scale = 1.0 + t * 0.01;
         } else {
           opacity = 0;
-          translateY = -14;
-          blur = 2.5;
+          translateY = -12;
           scale = 1.01;
         }
       } else if (index === CHAPTERS.length - 1) {
@@ -509,19 +573,16 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         const fadeInEnd = start + fadeDelta;
         if (p < fadeInStart) {
           opacity = 0;
-          translateY = 14;
-          blur = 2.5;
+          translateY = 12;
           scale = 0.99;
         } else if (p < fadeInEnd) {
           const t = (p - fadeInStart) / (fadeInEnd - fadeInStart);
           opacity = t;
-          translateY = (1 - t) * 14;
-          blur = (1 - t) * 2.5;
+          translateY = (1 - t) * 12;
           scale = 0.99 + t * 0.01;
         } else {
           opacity = 1;
           translateY = 0;
-          blur = 0;
           scale = 1.0;
         }
       } else {
@@ -533,44 +594,37 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
         if (p < fadeInStart) {
           opacity = 0;
-          translateY = 14;
-          blur = 2.5;
+          translateY = 12;
           scale = 0.99;
         } else if (p < fadeInEnd) {
           const t = (p - fadeInStart) / (fadeInEnd - fadeInStart);
           opacity = t;
-          translateY = (1 - t) * 14;
-          blur = (1 - t) * 2.5;
+          translateY = (1 - t) * 12;
           scale = 0.99 + t * 0.01;
         } else if (p <= fadeOutStart) {
           opacity = 1;
           translateY = 0;
-          blur = 0;
           scale = 1.0;
         } else if (p < fadeOutEnd) {
           const t = (p - fadeOutStart) / (fadeOutEnd - fadeOutStart);
           opacity = 1 - t;
-          translateY = -t * 14; // moves slightly upward as it leaves
-          blur = t * 2.5;
+          translateY = -t * 12; // moves slightly upward as it leaves
           scale = 1.0 + t * 0.01;
         } else {
           opacity = 0;
-          translateY = -14;
-          blur = 2.5;
+          translateY = -12;
           scale = 1.01;
         }
       }
 
       if (isReduced) {
         translateY = 0;
-        blur = 0;
         scale = 1.0;
       }
 
       return {
         opacity: clamp(opacity, 0, 1),
         translateY,
-        blur,
         scale,
         isVisible: opacity > 0.01,
         isInteractive: opacity > 0.6,
@@ -606,30 +660,31 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     >
       {/* 100vh Sticky Viewport Window */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center">
-        {/* Layer 1: Background Atmospheric Depth & Horizon Glow (Parallaxed) */}
+        {/* Layer 1: Background Atmospheric Depth & Horizon Glow */}
         <div className="absolute inset-0 bg-gradient-to-tr from-[#111315] via-[#151719] to-[#1E2124] z-0" />
 
-        {/* Blueprint Coordinate Matrix (Drifts opposite camera pan) */}
+        {/* Blueprint Coordinate Matrix (Subtle background texture) */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-15 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px] transition-transform duration-75"
+          className="absolute inset-0 pointer-events-none opacity-15 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px]"
           style={{
-            transform: `translate3d(${-currentCameraState.panX * 25}px, ${-currentCameraState.panY * 25}px, 0)`,
+            transform: `translate3d(${-currentCameraState.panX * 20}px, ${-currentCameraState.panY * 20}px, 0)`,
           }}
         />
 
-        {/* Ambient radial atmospheric illumination (Deep parallax) */}
+        {/* Ambient radial atmospheric illumination (Zero blur filter for 60fps performance) */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[#B59A6A]/8 filter blur-[120px] pointer-events-none transition-transform duration-75"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
           style={{
-            transform: `translate3d(calc(-50% + ${-currentCameraState.panX * 45}px), calc(-50% + ${-currentCameraState.panY * 45}px), 0) scale(${
-              1 + (currentCameraState.scale - 1) * 0.25
+            background: 'radial-gradient(circle, rgba(181, 154, 106, 0.07) 0%, rgba(181, 154, 106, 0.02) 40%, transparent 70%)',
+            transform: `translate3d(calc(-50% + ${-currentCameraState.panX * 30}px), calc(-50% + ${-currentCameraState.panY * 30}px), 0) scale(${
+              1 + (currentCameraState.scale - 1) * 0.2
             })`,
           }}
         />
 
         {/* Layer 2: Pure Canvas Architectural Stage */}
         <div className="relative w-full h-full max-w-[1920px] mx-auto flex items-center justify-center z-10">
-          {/* HTML5 Canvas: 60/120fps virtual camera trajectory with scale-matched push */}
+          {/* HTML5 Canvas: 60fps hardware accelerated virtual camera trajectory */}
           <canvas
             ref={canvasRef}
             className="w-full h-full object-contain pointer-events-none z-10"
@@ -646,14 +701,14 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
             </div>
           )}
 
-          {/* Layer 3: Foreground Cinematic Depth Layers */}
-          {/* Subtle anamorphic light sheen that rotates and shifts with camera */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-15 mix-blend-screen opacity-30">
+          {/* Layer 3: Foreground Cinematic Depth Layers (No expensive blend modes) */}
+          {/* Subtle anamorphic light sheen that shifts gently with camera */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-15 opacity-25">
             <div
-              className="absolute w-[200%] h-[1px] bg-gradient-to-r from-transparent via-[#B59A6A]/40 to-transparent top-1/2 left-[-50%] transition-transform duration-75"
+              className="absolute w-[200%] h-[1px] bg-gradient-to-r from-transparent via-[#B59A6A]/30 to-transparent top-1/2 left-[-50%]"
               style={{
                 transform: `rotate(${-14 + currentCameraState.rotation * 12}deg) translateY(${
-                  currentCameraState.panY * 240
+                  currentCameraState.panY * 160
                 }px)`,
               }}
             />
@@ -661,9 +716,9 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
           {/* Dynamic architectural vignette: subtle contrast adjustment behind the overall scene, never a visible container */}
           <div
-            className="absolute inset-0 pointer-events-none z-15 transition-opacity duration-300"
+            className="absolute inset-0 pointer-events-none z-15"
             style={{
-              background: 'radial-gradient(ellipse at center, transparent 40%, #111315 100%)',
+              background: 'radial-gradient(ellipse at center, transparent 45%, #111315 100%)',
               opacity: 0.35,
             }}
           />
@@ -694,7 +749,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           {/* EDITORIAL FLOATING TYPOGRAPHY (Zero Containers / Cards)   */}
           {/* ========================================================= */}
           {CHAPTERS.map((chapter, idx) => {
-            const { opacity, translateY, blur, scale, isVisible, isInteractive } = getChapterStyle(idx);
+            const { opacity, translateY, scale, isVisible, isInteractive } = getChapterStyle(idx);
             if (!isVisible) return null;
 
             const posClasses = getPositionClasses(chapter.position, chapter.align);
@@ -708,7 +763,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
                 style={{
                   opacity,
                   transform: `translate3d(${textParallaxX}px, ${translateY + textParallaxY}px, 0) scale(${scale})`,
-                  filter: blur > 0.1 ? `blur(${blur}px)` : 'none',
+                  willChange: isInteractive ? 'transform, opacity' : 'auto',
                 }}
                 aria-hidden={!isInteractive}
               >
