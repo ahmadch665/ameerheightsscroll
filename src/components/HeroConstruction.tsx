@@ -16,6 +16,8 @@ interface Chapter {
   id: string;
   num: string;
   navTitle: string;
+  timeLabel: string;
+  phaseName: string;
   label: string;
   primaryHeadline: string;
   secondaryHeadline: string;
@@ -33,95 +35,107 @@ interface Chapter {
 
 const CHAPTERS: Chapter[] = [
   {
-    id: 'vision',
+    id: 'day',
     num: '01',
-    navTitle: 'VISION',
-    label: '01 / THE VISION',
-    primaryHeadline: 'AMEER HEIGHTS',
-    secondaryHeadline: 'TOWER 10',
-    statement: 'LIVE ABOVE THE ORDINARY.',
-    range: [0.00, 0.16],
+    navTitle: 'DAY',
+    timeLabel: '11:30 AM',
+    phaseName: 'DAYLIGHT',
+    label: '01 / THE DAY BEGINS',
+    primaryHeadline: 'THE DAY BEGINS',
+    secondaryHeadline: 'NATURAL ARCHITECTURAL LIGHT.',
+    statement: 'PURE MONOLITHIC CONCRETE ELEVATION IN CRISP DAYLIGHT.',
+    range: [0.00, 0.20],
     position: 'bottom-left',
     align: 'left',
     focalLabel: '24mm F/2.8',
-    shotType: 'EXTREME WIDE ESTABLISHING',
+    shotType: 'NATURAL DAYLIGHT ESTABLISHING',
     cta: {
       type: 'scroll',
-      label: 'SCROLL TO EXPLORE',
+      label: 'SCROLL TO EXPERIENCE',
     },
   },
   {
-    id: 'architecture',
+    id: 'afternoon',
     num: '02',
-    navTitle: 'ARCHITECTURE',
-    label: '02 / THE ARCHITECTURE',
-    primaryHeadline: 'ARRIVE SOMEWHERE',
-    secondaryHeadline: 'EXCEPTIONAL.',
-    statement: 'CONTEMPORARY MONOLITHIC FORM.',
-    range: [0.16, 0.36],
+    navTitle: 'AFTERNOON',
+    timeLabel: '04:15 PM',
+    phaseName: 'LATE AFTERNOON',
+    label: '02 / LATE AFTERNOON',
+    primaryHeadline: 'WHERE SHADOW',
+    secondaryHeadline: 'DEFINES FORM.',
+    statement: 'RAKING SUNLIGHT CASTS DELICATE SHADOWS ALONG THE TOWER AXIS.',
+    range: [0.20, 0.40],
     position: 'top-left',
     align: 'left',
     focalLabel: '35mm F/2.8',
-    shotType: 'APPROACHING TOWER AXIS',
+    shotType: 'WARM AFTERNOON SHADOW FORM',
   },
   {
-    id: 'residences',
+    id: 'golden_hour',
     num: '03',
-    navTitle: 'RESIDENCES',
-    label: '03 / THE RESIDENCES',
-    primaryHeadline: 'DESIGNED WITH',
-    secondaryHeadline: 'INTENTION.',
-    statement: 'THIRTY PRIVATE TURNKEY SUITES.',
-    range: [0.36, 0.56],
+    navTitle: 'GOLDEN HOUR',
+    timeLabel: '06:40 PM',
+    phaseName: 'GOLDEN HOUR',
+    label: '03 / GOLDEN HOUR',
+    primaryHeadline: 'WHERE LIGHT',
+    secondaryHeadline: 'MEETS ARCHITECTURE.',
+    statement: 'RADIANT SUNSET EMBERS GRAZE PRIVATE BALCONIES & FAÇADE LOUVERS.',
+    range: [0.40, 0.60],
     position: 'bottom-right',
     align: 'right',
     focalLabel: '50mm F/2.0',
-    shotType: 'STRUCTURAL FORM REVEAL',
+    shotType: 'DIRECTIONAL SUNSET GRAZING',
   },
   {
-    id: 'lifestyle',
+    id: 'dusk',
     num: '04',
-    navTitle: 'LIFESTYLE',
-    label: '04 / THE LIFESTYLE',
-    primaryHeadline: 'MADE FOR',
-    secondaryHeadline: 'EVERYDAY LIVING.',
-    statement: 'AN EXCLUSIVE URBAN SANCTUARY.',
-    range: [0.56, 0.76],
+    navTitle: 'DUSK',
+    timeLabel: '07:25 PM',
+    phaseName: 'DUSK TWILIGHT',
+    label: '04 / THE DUSK',
+    primaryHeadline: 'THE CITY',
+    secondaryHeadline: 'CHANGES.',
+    statement: 'DEEP BLUE-HOUR SKY SETTLES AS NATURAL DAYLIGHT QUIETLY RECEDES.',
+    range: [0.60, 0.75],
     position: 'bottom-left',
     align: 'left',
     focalLabel: '70mm F/1.8',
-    shotType: 'BALCONY & RESIDENCE DETAIL',
+    shotType: 'BLUE HOUR SKY & RESIDENCE DETAIL',
   },
   {
-    id: 'details',
+    id: 'evening',
     num: '05',
-    navTitle: 'DETAILS',
-    label: '05 / THE DETAILS',
-    primaryHeadline: 'ENDURING',
-    secondaryHeadline: 'ELEGANCE.',
-    statement: 'PRECISION ARCHITECTURAL FINISHES.',
-    range: [0.76, 0.90],
+    navTitle: 'EVENING',
+    timeLabel: '08:30 PM',
+    phaseName: 'EVENING ILLUMINATION',
+    label: '05 / RESIDENCES AWAKEN',
+    primaryHeadline: 'THE RESIDENCES',
+    secondaryHeadline: 'COME ALIVE.',
+    statement: 'WARM PRIVATE INTERIORS ILLUMINATE FLOOR BY FLOOR ACROSS THE TOWER.',
+    range: [0.75, 0.88],
     position: 'top-right',
     align: 'right',
     focalLabel: '50mm F/2.0',
-    shotType: 'PRECISION ARCHITECTURAL FINISH',
+    shotType: 'RESIDENTIAL OCCUPANCY EMERGENCE',
   },
   {
-    id: 'destination',
+    id: 'night',
     num: '06',
-    navTitle: 'DESTINATION',
-    label: '06 / THE DESTINATION',
+    navTitle: 'NIGHT',
+    timeLabel: '09:45 PM',
+    phaseName: 'MIDNIGHT HERO',
+    label: '06 / THE NIGHT',
     primaryHeadline: 'AMEER HEIGHTS',
     secondaryHeadline: 'TOWER 10',
     statement: 'MAIN BZU CHOWK · BOSAN ROAD',
-    range: [0.90, 1.00],
+    range: [0.88, 1.00],
     position: 'bottom-left',
     align: 'left',
     focalLabel: '35mm F/2.8',
-    shotType: 'GRAND HERO ARCHITECTURE',
+    shotType: 'COMMANDING NIGHT ARCHITECTURE',
     cta: {
       type: 'enquire',
-      label: 'ENQUIRE NOW',
+      label: 'DISCOVER YOUR RESIDENCE',
     },
   },
 ];
@@ -178,9 +192,278 @@ function getCameraState(p: number): CameraState {
   };
 }
 
+// =========================================================================
+// ENVIRONMENTAL LIGHTING & ATMOSPHERE ENGINE
+// Mathematical interpolation for Day -> Late Afternoon -> Golden Hour -> Dusk -> Night
+// =========================================================================
+
+type RGB = [number, number, number];
+
+function lerpRGB(c1: RGB, c2: RGB, factor: number): RGB {
+  const f = clamp(factor, 0, 1);
+  return [
+    Math.round(lerp(c1[0], c2[0], f)),
+    Math.round(lerp(c1[1], c2[1], f)),
+    Math.round(lerp(c1[2], c2[2], f)),
+  ];
+}
+
+function rgbStr(c: RGB): string {
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
+
+interface EnvironmentState {
+  skyZenith: string;
+  skyHorizon: string;
+  skyGround: string;
+  skyCssGradient: string;
+  goldenRake: number;
+  nightMultiply: number;
+  duskMultiplyTop: RGB;
+  duskMultiplyBot: RGB;
+  architecturalLight: number;
+  windowLightActive: boolean;
+  starsOpacity: number;
+}
+
+/**
+ * Pure deterministic environmental calculation.
+ * No cumulative state, perfectly repeatable forward & backward.
+ */
+function getEnvironmentState(progress: number): EnvironmentState {
+  const p = clamp(progress, 0, 1);
+
+  // Keyframe Sky Palettes
+  // Day (0.00 - 0.20): Crisp architectural azure daylight & luminous horizon
+  const DAY_ZENITH: RGB = [142, 167, 194];   // #8EA7C2
+  const DAY_HORIZON: RGB = [221, 231, 240];  // #DDE7F0
+  const DAY_GROUND: RGB = [185, 192, 198];
+
+  // Afternoon (0.32): Warm sunlit sky with softening horizon
+  const AFT_ZENITH: RGB = [96, 126, 158];    // #607E9E
+  const AFT_HORIZON: RGB = [232, 218, 194];  // #E8DAC2
+  const AFT_GROUND: RGB = [172, 164, 154];
+
+  // Golden Hour (0.50): Deep cyan zenith into rich amber horizon glow
+  const GLD_ZENITH: RGB = [42, 68, 102];     // #2A4466
+  const GLD_HORIZON: RGB = [236, 156, 90];   // #EC9C5A
+  const GLD_GROUND: RGB = [135, 96, 72];
+
+  // Dusk (0.68): Deep blue-hour twilight zenith with sunset ember horizon
+  const DSK_ZENITH: RGB = [18, 25, 38];      // #121926
+  const DSK_HORIZON: RGB = [78, 48, 52];     // #4E3034
+  const DSK_GROUND: RGB = [38, 30, 36];
+
+  // Night (0.86 - 1.00): Deep obsidian midnight with faint city ambient horizon
+  const NIT_ZENITH: RGB = [7, 10, 15];       // #070A0F
+  const NIT_HORIZON: RGB = [18, 23, 34];     // #121722
+  const NIT_GROUND: RGB = [14, 16, 21];
+
+  let currentZenith: RGB;
+  let currentHorizon: RGB;
+  let currentGround: RGB;
+
+  if (p <= 0.30) {
+    const t = p / 0.30;
+    const s = t * t * (3 - 2 * t);
+    currentZenith = lerpRGB(DAY_ZENITH, AFT_ZENITH, s);
+    currentHorizon = lerpRGB(DAY_HORIZON, AFT_HORIZON, s);
+    currentGround = lerpRGB(DAY_GROUND, AFT_GROUND, s);
+  } else if (p <= 0.50) {
+    const t = (p - 0.30) / 0.20;
+    const s = t * t * (3 - 2 * t);
+    currentZenith = lerpRGB(AFT_ZENITH, GLD_ZENITH, s);
+    currentHorizon = lerpRGB(AFT_HORIZON, GLD_HORIZON, s);
+    currentGround = lerpRGB(AFT_GROUND, GLD_GROUND, s);
+  } else if (p <= 0.68) {
+    const t = (p - 0.50) / 0.18;
+    const s = t * t * (3 - 2 * t);
+    currentZenith = lerpRGB(GLD_ZENITH, DSK_ZENITH, s);
+    currentHorizon = lerpRGB(GLD_HORIZON, DSK_HORIZON, s);
+    currentGround = lerpRGB(GLD_GROUND, DSK_GROUND, s);
+  } else {
+    const t = clamp((p - 0.68) / 0.20, 0, 1);
+    const s = t * t * (3 - 2 * t);
+    currentZenith = lerpRGB(DSK_ZENITH, NIT_ZENITH, s);
+    currentHorizon = lerpRGB(DSK_HORIZON, NIT_HORIZON, s);
+    currentGround = lerpRGB(DSK_GROUND, NIT_GROUND, s);
+  }
+
+  // Golden Hour directional sun rake intensity (smooth bell curve peaking at 0.50)
+  let goldenRake = 0;
+  if (p >= 0.22 && p <= 0.66) {
+    if (p < 0.50) {
+      const t = (p - 0.22) / 0.28;
+      goldenRake = t * t * (3 - 2 * t);
+    } else {
+      const t = (0.66 - p) / 0.16;
+      goldenRake = t * t * (3 - 2 * t);
+    }
+  }
+
+  // Dusk/Night Shading (Atmospheric Multiply Tone Curve)
+  // Gently begins around 0.44, ramps through dusk (0.65) to full night (0.85)
+  let nightMultiply = 0;
+  if (p > 0.42) {
+    const t = clamp((p - 0.42) / 0.44, 0, 1);
+    nightMultiply = t * t * (3 - 2 * t);
+  }
+
+  // Multiply target colors for atmospheric twilight
+  const duskMultiplyTop: RGB = [18, 24, 38];
+  const duskMultiplyBot: RGB = [28, 34, 46];
+
+  // Architectural Lighting (Crown, Fins, Lobby):
+  // 0% in day -> 10% hint at golden hour -> 60% at dusk -> 100% at night
+  let architecturalLight = 0;
+  if (p > 0.45) {
+    const t = clamp((p - 0.45) / 0.40, 0, 1);
+    architecturalLight = t * t * (3 - 2 * t);
+  }
+
+  // Window Lights turn active starting at dusk (0.58)
+  const windowLightActive = p >= 0.58;
+
+  // Stars in night sky (above crown)
+  let starsOpacity = 0;
+  if (p > 0.68) {
+    const t = clamp((p - 0.68) / 0.18, 0, 1);
+    starsOpacity = t * t * (3 - 2 * t);
+  }
+
+  const skyZenithStr = rgbStr(currentZenith);
+  const skyHorizonStr = rgbStr(currentHorizon);
+  const skyGroundStr = rgbStr(currentGround);
+
+  return {
+    skyZenith: skyZenithStr,
+    skyHorizon: skyHorizonStr,
+    skyGround: skyGroundStr,
+    skyCssGradient: `linear-gradient(to bottom, ${skyZenithStr} 0%, ${skyHorizonStr} 65%, ${skyGroundStr} 100%)`,
+    goldenRake,
+    nightMultiply,
+    duskMultiplyTop,
+    duskMultiplyBot,
+    architecturalLight,
+    windowLightActive,
+    starsOpacity,
+  };
+}
+
+// Pre-computed residential windows across 12 floor tiers and 5 architectural window bays
+// Each unit has a staggered turnOn progress between 0.61 and 0.86 for physical realism
+interface WindowUnit {
+  u: number;
+  v: number;
+  w: number;
+  h: number;
+  turnOn: number;
+  color: RGB;
+  maxAlpha: number;
+  hasSpill: boolean;
+}
+
+const RESIDENTIAL_WINDOWS: WindowUnit[] = [
+  // Penthouse & Upper Levels (Floors 12-10)
+  { u: 0.194, v: 0.297, w: 0.138, h: 0.022, turnOn: 0.663, color: [255, 228, 185], maxAlpha: 0.68, hasSpill: true },
+  { u: 0.375, v: 0.297, w: 0.083, h: 0.022, turnOn: 0.724, color: [255, 218, 160], maxAlpha: 0.75, hasSpill: false },
+  { u: 0.472, v: 0.297, w: 0.083, h: 0.022, turnOn: 0.615, color: [250, 235, 210], maxAlpha: 0.72, hasSpill: false },
+  { u: 0.569, v: 0.297, w: 0.097, h: 0.022, turnOn: 0.810, color: [255, 205, 145], maxAlpha: 0.64, hasSpill: true },
+  { u: 0.708, v: 0.297, w: 0.111, h: 0.022, turnOn: 0.645, color: [255, 218, 160], maxAlpha: 0.78, hasSpill: true },
+
+  { u: 0.194, v: 0.336, w: 0.138, h: 0.022, turnOn: 0.742, color: [255, 205, 145], maxAlpha: 0.66, hasSpill: true },
+  { u: 0.375, v: 0.336, w: 0.083, h: 0.022, turnOn: 0.680, color: [255, 228, 185], maxAlpha: 0.80, hasSpill: false },
+  { u: 0.472, v: 0.336, w: 0.083, h: 0.022, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: false }, // Dark/unoccupied
+  { u: 0.569, v: 0.336, w: 0.097, h: 0.022, turnOn: 0.630, color: [250, 235, 210], maxAlpha: 0.74, hasSpill: true },
+  { u: 0.708, v: 0.336, w: 0.111, h: 0.022, turnOn: 0.768, color: [255, 228, 185], maxAlpha: 0.70, hasSpill: true },
+
+  { u: 0.194, v: 0.375, w: 0.138, h: 0.022, turnOn: 0.620, color: [255, 218, 160], maxAlpha: 0.72, hasSpill: true },
+  { u: 0.375, v: 0.375, w: 0.083, h: 0.022, turnOn: 0.825, color: [255, 205, 145], maxAlpha: 0.65, hasSpill: false },
+  { u: 0.472, v: 0.375, w: 0.083, h: 0.022, turnOn: 0.705, color: [255, 228, 185], maxAlpha: 0.76, hasSpill: false },
+  { u: 0.569, v: 0.375, w: 0.097, h: 0.022, turnOn: 0.672, color: [255, 218, 160], maxAlpha: 0.70, hasSpill: true },
+  { u: 0.708, v: 0.375, w: 0.111, h: 0.022, turnOn: 0.840, color: [250, 235, 210], maxAlpha: 0.62, hasSpill: true },
+
+  // Mid-Rise Suites (Floors 9-6)
+  { u: 0.194, v: 0.414, w: 0.138, h: 0.022, turnOn: 0.785, color: [255, 228, 185], maxAlpha: 0.75, hasSpill: true },
+  { u: 0.375, v: 0.414, w: 0.083, h: 0.022, turnOn: 0.638, color: [255, 218, 160], maxAlpha: 0.82, hasSpill: false },
+  { u: 0.472, v: 0.414, w: 0.083, h: 0.022, turnOn: 0.750, color: [255, 205, 145], maxAlpha: 0.68, hasSpill: false },
+  { u: 0.569, v: 0.414, w: 0.097, h: 0.022, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: true },  // Dark
+  { u: 0.708, v: 0.414, w: 0.111, h: 0.022, turnOn: 0.660, color: [250, 235, 210], maxAlpha: 0.74, hasSpill: true },
+
+  { u: 0.194, v: 0.453, w: 0.138, h: 0.022, turnOn: 0.612, color: [255, 218, 160], maxAlpha: 0.78, hasSpill: true },
+  { u: 0.375, v: 0.453, w: 0.083, h: 0.022, turnOn: 0.730, color: [255, 228, 185], maxAlpha: 0.70, hasSpill: false },
+  { u: 0.472, v: 0.453, w: 0.083, h: 0.022, turnOn: 0.690, color: [255, 218, 160], maxAlpha: 0.80, hasSpill: false },
+  { u: 0.569, v: 0.453, w: 0.097, h: 0.022, turnOn: 0.835, color: [255, 205, 145], maxAlpha: 0.64, hasSpill: true },
+  { u: 0.708, v: 0.453, w: 0.111, h: 0.022, turnOn: 0.718, color: [255, 228, 185], maxAlpha: 0.72, hasSpill: true },
+
+  { u: 0.194, v: 0.492, w: 0.138, h: 0.023, turnOn: 0.655, color: [250, 235, 210], maxAlpha: 0.76, hasSpill: true },
+  { u: 0.375, v: 0.492, w: 0.083, h: 0.023, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: false }, // Dark
+  { u: 0.472, v: 0.492, w: 0.083, h: 0.023, turnOn: 0.628, color: [255, 205, 145], maxAlpha: 0.74, hasSpill: false },
+  { u: 0.569, v: 0.492, w: 0.097, h: 0.023, turnOn: 0.760, color: [255, 228, 185], maxAlpha: 0.70, hasSpill: true },
+  { u: 0.708, v: 0.492, w: 0.111, h: 0.023, turnOn: 0.795, color: [255, 218, 160], maxAlpha: 0.82, hasSpill: true },
+
+  { u: 0.194, v: 0.539, w: 0.138, h: 0.023, turnOn: 0.710, color: [255, 218, 160], maxAlpha: 0.80, hasSpill: true },
+  { u: 0.375, v: 0.539, w: 0.083, h: 0.023, turnOn: 0.640, color: [255, 228, 185], maxAlpha: 0.72, hasSpill: false },
+  { u: 0.472, v: 0.539, w: 0.083, h: 0.023, turnOn: 0.852, color: [255, 205, 145], maxAlpha: 0.65, hasSpill: false },
+  { u: 0.569, v: 0.539, w: 0.097, h: 0.023, turnOn: 0.675, color: [250, 235, 210], maxAlpha: 0.76, hasSpill: true },
+  { u: 0.708, v: 0.539, w: 0.111, h: 0.023, turnOn: 0.740, color: [255, 218, 160], maxAlpha: 0.78, hasSpill: true },
+
+  // Lower Suites & Podium (Floors 5-1)
+  { u: 0.194, v: 0.586, w: 0.138, h: 0.024, turnOn: 0.622, color: [255, 228, 185], maxAlpha: 0.75, hasSpill: true },
+  { u: 0.375, v: 0.586, w: 0.083, h: 0.024, turnOn: 0.772, color: [255, 218, 160], maxAlpha: 0.68, hasSpill: false },
+  { u: 0.472, v: 0.586, w: 0.083, h: 0.024, turnOn: 0.685, color: [250, 235, 210], maxAlpha: 0.84, hasSpill: false },
+  { u: 0.569, v: 0.586, w: 0.097, h: 0.024, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: true },  // Dark
+  { u: 0.708, v: 0.586, w: 0.111, h: 0.024, turnOn: 0.635, color: [255, 205, 145], maxAlpha: 0.72, hasSpill: true },
+
+  { u: 0.194, v: 0.648, w: 0.138, h: 0.024, turnOn: 0.815, color: [255, 218, 160], maxAlpha: 0.70, hasSpill: true },
+  { u: 0.375, v: 0.648, w: 0.083, h: 0.024, turnOn: 0.650, color: [255, 228, 185], maxAlpha: 0.80, hasSpill: false },
+  { u: 0.472, v: 0.648, w: 0.083, h: 0.024, turnOn: 0.735, color: [255, 218, 160], maxAlpha: 0.76, hasSpill: false },
+  { u: 0.569, v: 0.648, w: 0.097, h: 0.024, turnOn: 0.618, color: [255, 205, 145], maxAlpha: 0.82, hasSpill: true },
+  { u: 0.708, v: 0.648, w: 0.111, h: 0.024, turnOn: 0.845, color: [250, 235, 210], maxAlpha: 0.66, hasSpill: true },
+
+  { u: 0.194, v: 0.710, w: 0.138, h: 0.024, turnOn: 0.695, color: [255, 228, 185], maxAlpha: 0.74, hasSpill: true },
+  { u: 0.375, v: 0.710, w: 0.083, h: 0.024, turnOn: 0.780, color: [255, 218, 160], maxAlpha: 0.78, hasSpill: false },
+  { u: 0.472, v: 0.710, w: 0.083, h: 0.024, turnOn: 0.642, color: [255, 205, 145], maxAlpha: 0.72, hasSpill: false },
+  { u: 0.569, v: 0.710, w: 0.097, h: 0.024, turnOn: 0.725, color: [250, 235, 210], maxAlpha: 0.80, hasSpill: true },
+  { u: 0.708, v: 0.710, w: 0.111, h: 0.024, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: true },  // Dark
+
+  { u: 0.194, v: 0.773, w: 0.138, h: 0.024, turnOn: 0.632, color: [255, 218, 160], maxAlpha: 0.76, hasSpill: true },
+  { u: 0.375, v: 0.773, w: 0.083, h: 0.024, turnOn: 0.830, color: [255, 205, 145], maxAlpha: 0.68, hasSpill: false },
+  { u: 0.472, v: 0.773, w: 0.083, h: 0.024, turnOn: 0.715, color: [255, 228, 185], maxAlpha: 0.75, hasSpill: false },
+  { u: 0.569, v: 0.773, w: 0.097, h: 0.024, turnOn: 0.668, color: [255, 218, 160], maxAlpha: 0.82, hasSpill: true },
+  { u: 0.708, v: 0.773, w: 0.111, h: 0.024, turnOn: 0.762, color: [250, 235, 210], maxAlpha: 0.70, hasSpill: true },
+
+  { u: 0.194, v: 0.835, w: 0.138, h: 0.024, turnOn: 0.702, color: [255, 228, 185], maxAlpha: 0.78, hasSpill: true },
+  { u: 0.375, v: 0.835, w: 0.083, h: 0.024, turnOn: 0.625, color: [255, 218, 160], maxAlpha: 0.74, hasSpill: false },
+  { u: 0.472, v: 0.835, w: 0.083, h: 0.024, turnOn: 99.00, color: [255, 218, 160], maxAlpha: 0.00, hasSpill: false }, // Dark
+  { u: 0.569, v: 0.835, w: 0.097, h: 0.024, turnOn: 0.788, color: [255, 205, 145], maxAlpha: 0.72, hasSpill: true },
+  { u: 0.708, v: 0.835, w: 0.111, h: 0.024, turnOn: 0.658, color: [250, 235, 210], maxAlpha: 0.80, hasSpill: true },
+];
+
+// Fixed deterministic night stars
+const NIGHT_STARS = [
+  { x: 0.08, y: 0.06, size: 0.9, alpha: 0.7 },
+  { x: 0.14, y: 0.12, size: 1.2, alpha: 0.8 },
+  { x: 0.19, y: 0.04, size: 0.8, alpha: 0.6 },
+  { x: 0.24, y: 0.16, size: 1.4, alpha: 0.9 },
+  { x: 0.29, y: 0.08, size: 1.0, alpha: 0.7 },
+  { x: 0.33, y: 0.03, size: 0.7, alpha: 0.5 },
+  { x: 0.68, y: 0.05, size: 1.1, alpha: 0.8 },
+  { x: 0.72, y: 0.14, size: 0.9, alpha: 0.7 },
+  { x: 0.78, y: 0.08, size: 1.3, alpha: 0.9 },
+  { x: 0.83, y: 0.18, size: 0.8, alpha: 0.6 },
+  { x: 0.87, y: 0.04, size: 1.2, alpha: 0.8 },
+  { x: 0.92, y: 0.11, size: 1.0, alpha: 0.7 },
+  { x: 0.95, y: 0.07, size: 0.9, alpha: 0.6 },
+  { x: 0.42, y: 0.04, size: 0.8, alpha: 0.6 },
+  { x: 0.58, y: 0.03, size: 0.8, alpha: 0.5 },
+];
+
 export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquiry }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const vignetteRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
 
@@ -229,7 +512,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     return null;
   }, []);
 
-  // 60fps cinematic camera frame rendering on HTML5 canvas
+  // 60fps cinematic camera frame rendering with Day -> Golden Hour -> Night lighting pipeline
   // Uses floating-point subpixel coordinates to eliminate 1px integer rounding jitter
   const drawInterpolatedFrame = useCallback(
     (progress: number) => {
@@ -258,6 +541,17 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         ? { scale: 1.0, panX: 0, panY: 0 }
         : getCameraState(clampedProgress);
 
+      // Compute environmental lighting state from progress
+      const env = getEnvironmentState(clampedProgress);
+
+      // Directly update DOM backdrop and vignette with zero React state overhead
+      if (backdropRef.current) {
+        backdropRef.current.style.background = env.skyCssGradient;
+      }
+      if (vignetteRef.current) {
+        vignetteRef.current.style.opacity = String(lerp(0.18, 0.48, env.nightMultiply));
+      }
+
       // Natural contain-scaling preserving exact building proportions
       const imgW = baseImg.naturalWidth;
       const imgH = baseImg.naturalHeight;
@@ -268,11 +562,40 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       const centerX = cw / 2 + cw * camera.panX;
       const centerY = ch / 2 + ch * camera.panY;
 
-      // Unified architectural backdrop fill
-      ctx.fillStyle = '#111315';
+      // =========================================================================
+      // PASS 1: CONTINUOUS SKY BACKDROP ACROSS ENTIRE CANVAS
+      // Seamlessly fills entire canvas from zenith to horizon to ground
+      // =========================================================================
+      ctx.globalCompositeOperation = 'source-over';
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, ch);
+      skyGrad.addColorStop(0, env.skyZenith);
+      skyGrad.addColorStop(0.65, env.skyHorizon);
+      skyGrad.addColorStop(1, env.skyGround);
+      ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, cw, ch);
 
-      // Apply camera transform matrix
+      // =========================================================================
+      // PASS 2: SUBTLE NIGHT STARS (In upper sky above crown at night)
+      // =========================================================================
+      if (env.starsOpacity > 0.02) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        for (let i = 0; i < NIGHT_STARS.length; i++) {
+          const star = NIGHT_STARS[i];
+          const sx = cw * star.x;
+          const sy = ch * star.y;
+          if (sy > ch * 0.42) continue; // Keep stars in upper atmospheric sky
+          ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha * env.starsOpacity})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, star.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // PASS 3: ARCHITECTURAL CAMERA FRAME TRANSFORM
+      // =========================================================================
       ctx.save();
       ctx.translate(centerX, centerY);
 
@@ -284,16 +607,14 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
       const nextImg = baseIndex !== nextIndex ? getNearestLoadedImage(nextIndex) : null;
 
+      // Draw base architectural frame
       if (!nextImg || blendFactor < 0.06) {
-        // Pure single sharp frame
         ctx.globalAlpha = 1.0;
         ctx.drawImage(baseImg, dx, dy, dw, dh);
       } else if (blendFactor > 0.94) {
-        // Pure next sharp frame
         ctx.globalAlpha = 1.0;
         ctx.drawImage(nextImg, dx, dy, dw, dh);
       } else {
-        // Crossfade with smoothstep easing at identical geometric coordinates (zero blur, zero ghosting)
         const t = (blendFactor - 0.06) / 0.88;
         const smoothT = t * t * (3 - 2 * t);
 
@@ -303,9 +624,155 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         ctx.globalAlpha = smoothT;
         ctx.drawImage(nextImg, dx, dy, dw, dh);
       }
+      ctx.globalAlpha = 1.0;
+
+      // =========================================================================
+      // PASS 4: GOLDEN HOUR WARM SUNLIGHT RAKE
+      // Directional natural sunlight grazing west-facing balconies & louvers
+      // =========================================================================
+      if (env.goldenRake > 0.01) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'soft-light';
+
+        const sunGrad = ctx.createLinearGradient(
+          dx + dw * 0.95, dy + dh * 0.12,
+          dx + dw * 0.05, dy + dh * 0.88
+        );
+        sunGrad.addColorStop(0, `rgba(255, 175, 75, ${env.goldenRake * 0.52})`);
+        sunGrad.addColorStop(0.45, `rgba(255, 210, 130, ${env.goldenRake * 0.26})`);
+        sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(dx, dy, dw, dh);
+
+        // Subtle specular highlight on the west architectural edge
+        const rimGrad = ctx.createLinearGradient(dx + dw * 0.80, 0, dx + dw, 0);
+        rimGrad.addColorStop(0, 'rgba(255, 220, 150, 0)');
+        rimGrad.addColorStop(1, `rgba(255, 220, 150, ${env.goldenRake * 0.32})`);
+        ctx.fillStyle = rimGrad;
+        ctx.fillRect(dx, dy, dw, dh);
+
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // PASS 5: DUSK & NIGHT ATMOSPHERIC MULTIPLY TONE CURVE
+      // Transforms daylight image into deep luxury architectural twilight & night
+      // Preserves concrete texture, balcony edges, and razor-sharp silhouette
+      // =========================================================================
+      if (env.nightMultiply > 0.01) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+
+        const duskGrad = ctx.createLinearGradient(0, dy, 0, dy + dh);
+        const topR = Math.round(lerp(255, env.duskMultiplyTop[0], env.nightMultiply));
+        const topG = Math.round(lerp(255, env.duskMultiplyTop[1], env.nightMultiply));
+        const topB = Math.round(lerp(255, env.duskMultiplyTop[2], env.nightMultiply));
+
+        const botR = Math.round(lerp(255, env.duskMultiplyBot[0], env.nightMultiply));
+        const botG = Math.round(lerp(255, env.duskMultiplyBot[1], env.nightMultiply));
+        const botB = Math.round(lerp(255, env.duskMultiplyBot[2], env.nightMultiply));
+
+        duskGrad.addColorStop(0, `rgb(${topR}, ${topG}, ${topB})`);
+        duskGrad.addColorStop(0.65, `rgb(${topR + 8}, ${topG + 8}, ${topB + 6})`);
+        duskGrad.addColorStop(1, `rgb(${botR}, ${botG}, ${botB})`);
+        ctx.fillStyle = duskGrad;
+        ctx.fillRect(dx, dy, dw, dh);
+
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // PASS 6: ARCHITECTURAL LIGHTING & RESIDENTIAL APARTMENT WINDOWS
+      // Staggered interior window illumination + crown, fins, lobby lights
+      // =========================================================================
+      if (env.architecturalLight > 0.01 || env.windowLightActive) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        // 1. Crown Uplighting: Champagne gold grazing upward on the tower crown parapet
+        if (env.architecturalLight > 0.01) {
+          const crownGrad = ctx.createLinearGradient(0, dy + dh * 0.16, 0, dy + dh * 0.07);
+          crownGrad.addColorStop(0, `rgba(255, 230, 180, ${env.architecturalLight * 0.45})`);
+          crownGrad.addColorStop(0.65, `rgba(240, 205, 145, ${env.architecturalLight * 0.20})`);
+          crownGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = crownGrad;
+          ctx.fillRect(dx + dw * 0.36, dy + dh * 0.07, dw * 0.28, dh * 0.09);
+
+          // 2. Vertical Architectural Fin Grazers (Subtle structural ribs)
+          const finXs = [0.26, 0.36, 0.50, 0.64, 0.72];
+          for (let f = 0; f < finXs.length; f++) {
+            const fx = dx + dw * finXs[f];
+            const finGrad = ctx.createLinearGradient(0, dy + dh * 0.85, 0, dy + dh * 0.25);
+            finGrad.addColorStop(0, `rgba(255, 225, 170, ${env.architecturalLight * 0.30})`);
+            finGrad.addColorStop(0.5, `rgba(255, 215, 150, ${env.architecturalLight * 0.18})`);
+            finGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = finGrad;
+            ctx.fillRect(fx - dw * 0.004, dy + dh * 0.25, dw * 0.008, dh * 0.60);
+          }
+
+          // 3. Grand Entrance Lobby & Canopy Warm Illumination
+          const lobbyGrad = ctx.createRadialGradient(
+            dx + dw * 0.50, dy + dh * 0.87, dw * 0.02,
+            dx + dw * 0.50, dy + dh * 0.87, dw * 0.28
+          );
+          lobbyGrad.addColorStop(0, `rgba(255, 235, 195, ${env.architecturalLight * 0.50})`);
+          lobbyGrad.addColorStop(0.5, `rgba(220, 185, 130, ${env.architecturalLight * 0.25})`);
+          lobbyGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = lobbyGrad;
+          ctx.fillRect(dx + dw * 0.24, dy + dh * 0.82, dw * 0.52, dh * 0.12);
+
+          // 4. Crown Aviation Obstruction Beacon
+          const beaconAlpha = env.architecturalLight * (0.45 + 0.45 * Math.sin(Date.now() * 0.004));
+          ctx.fillStyle = `rgba(245, 55, 55, ${beaconAlpha})`;
+          ctx.beginPath();
+          ctx.arc(dx + dw * 0.50, dy + dh * 0.071, Math.max(2, dw * 0.0035), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 5. Staggered Interior Residential Windows (Natural, physical lamp warmup)
+        if (env.windowLightActive) {
+          for (let i = 0; i < RESIDENTIAL_WINDOWS.length; i++) {
+            const win = RESIDENTIAL_WINDOWS[i];
+            if (clampedProgress < win.turnOn) continue;
+
+            // Physical lamp warmup (0.025 progress delta ramp)
+            const t = clamp((clampedProgress - win.turnOn) / 0.025, 0, 1);
+            const ramp = t * t * (3 - 2 * t);
+            const alpha = win.maxAlpha * ramp;
+            if (alpha < 0.01) continue;
+
+            const wx = dx + win.u * dw;
+            const wy = dy + win.v * dh;
+            const ww = win.w * dw;
+            const wh = win.h * dh;
+
+            // Warm interior room wash
+            ctx.fillStyle = `rgba(${win.color[0]}, ${win.color[1]}, ${win.color[2]}, ${alpha * 0.85})`;
+            ctx.fillRect(wx, wy, ww, wh);
+
+            // Slightly brighter luminous interior center
+            ctx.fillStyle = `rgba(255, 248, 230, ${alpha * 0.50})`;
+            ctx.fillRect(wx + ww * 0.2, wy + wh * 0.2, ww * 0.6, wh * 0.6);
+
+            // Architectural window mullion shadow (divider line)
+            ctx.fillStyle = 'rgba(10, 14, 20, 0.45)';
+            ctx.fillRect(wx + ww * 0.48, wy, ww * 0.04, wh);
+
+            // Subtle balcony floor light spill
+            if (win.hasSpill) {
+              const spillGrad = ctx.createLinearGradient(wx, wy + wh, wx, wy + wh * 1.5);
+              spillGrad.addColorStop(0, `rgba(${win.color[0]}, ${win.color[1]}, ${win.color[2]}, ${alpha * 0.25})`);
+              spillGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+              ctx.fillStyle = spillGrad;
+              ctx.fillRect(wx - ww * 0.08, wy + wh, ww * 1.16, wh * 0.5);
+            }
+          }
+        }
+
+        ctx.restore();
+      }
 
       ctx.restore();
-      ctx.globalAlpha = 1.0;
       lastDrawnProgressRef.current = progress;
     },
     [getNearestLoadedImage]
@@ -397,7 +864,6 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       for (let i = 1; i < Math.min(6, TOTAL_FRAMES); i++) {
         if (!isMounted) return;
         await loadAndDecode(i);
-        // If user already scrolled to this section, render frame immediately
         const curProgress = currentProgressRef.current;
         if (Math.abs(curProgress * (TOTAL_FRAMES - 1) - i) < 1.0) {
           drawInterpolatedFrame(curProgress);
@@ -479,7 +945,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           break;
         }
       }
-      if (nextProgress >= 0.9) {
+      if (nextProgress >= 0.88) {
         activeIdx = CHAPTERS.length - 1;
       }
 
@@ -576,32 +1042,30 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     <section
       id="hero"
       ref={containerRef}
-      className="relative w-full h-[420vh] bg-[#111315] select-none"
-      aria-label="Ameer Heights Architectural Construction Timeline"
+      className="relative w-full h-[450vh] bg-[#111315] select-none"
+      aria-label="Ameer Heights Architectural Day to Night Experience"
     >
       {/* 100vh Sticky Viewport Window */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center">
-        {/* Layer 1: Background Atmospheric Depth (Static, zero compositing churn) */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#111315] via-[#151719] to-[#1E2124] z-0" />
-
-        {/* Blueprint Coordinate Matrix (Static architectural background) */}
-        <div className="absolute inset-0 pointer-events-none opacity-15 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px]" />
-
-        {/* Ambient radial atmospheric illumination (Static background) */}
+        {/* Layer 1: Continuous Atmospheric Backdrop (Directly updated from environmental engine) */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
+          ref={backdropRef}
+          className="absolute inset-0 z-0 transition-colors duration-200 pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(181, 154, 106, 0.07) 0%, rgba(181, 154, 106, 0.02) 40%, transparent 70%)',
+            background: 'linear-gradient(to bottom, #8EA7C2 0%, #DDE7F0 65%, #B9C0C6 100%)',
           }}
         />
 
+        {/* Precision Blueprint Architectural Coordinates Grid (Subtle luxury texture) */}
+        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(to_right,#B59A6A15_1px,transparent_1px),linear-gradient(to_bottom,#B59A6A15_1px,transparent_1px)] bg-[size:50px_50px]" />
+
         {/* Layer 2: Pure Canvas Architectural Stage */}
         <div className="relative w-full h-full max-w-[1920px] mx-auto flex items-center justify-center z-10">
-          {/* HTML5 Canvas: 60fps hardware accelerated virtual camera trajectory */}
+          {/* HTML5 Canvas: 60fps hardware accelerated virtual camera & environmental lighting */}
           <canvas
             ref={canvasRef}
             className="w-full h-full object-contain pointer-events-none z-10"
-            aria-label="Ameer Heights Tower 10 3D Construction Animation"
+            aria-label="Ameer Heights Tower 10 Day to Night Architectural Transformation"
           />
 
           {/* Fallback & Initial Loading State */}
@@ -611,40 +1075,36 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
             </div>
           )}
 
-          {/* Layer 3: Foreground Cinematic Depth Layers (Static, no expensive blend modes) */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-15 opacity-25">
-            <div className="absolute w-[200%] h-[1px] bg-gradient-to-r from-transparent via-[#B59A6A]/30 to-transparent top-1/2 left-[-50%] -rotate-12" />
-          </div>
-
-          {/* Dynamic architectural vignette: subtle contrast adjustment */}
+          {/* Dynamic Architectural Vignette (Subtly deepens at night, direct GPU update) */}
           <div
-            className="absolute inset-0 pointer-events-none z-15"
+            ref={vignetteRef}
+            className="absolute inset-0 pointer-events-none z-15 transition-opacity duration-300"
             style={{
-              background: 'radial-gradient(ellipse at center, transparent 45%, #111315 100%)',
-              opacity: 0.35,
+              background: 'radial-gradient(ellipse at center, transparent 48%, rgba(10, 13, 18, 0.95) 100%)',
+              opacity: 0.20,
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111315]/60 via-transparent to-[#111315]/20 pointer-events-none z-15" />
 
-          {/* Precision Architectural Crosshair Reticles (Unboxed) */}
+          {/* Precision Architectural Geographic Coordinates */}
           <div
-            className="absolute top-28 left-6 md:left-12 hidden sm:flex items-center gap-3 font-mono text-[9px] text-[#8C8C87]/80 tracking-[0.25em] z-20 pointer-events-none"
+            className="absolute top-28 left-6 md:left-12 hidden sm:flex items-center gap-3 font-mono text-[9px] text-[#FAF9F6]/80 tracking-[0.25em] z-20 pointer-events-none"
             style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
           >
-            <div className="w-2.5 h-2.5 border-t border-l border-[#B59A6A]/50" />
+            <div className="w-2.5 h-2.5 border-t border-l border-[#B59A6A]/80" />
             <span>30.2585° N, 71.5149° E</span>
           </div>
 
-          {/* Live Cinematic Camera Telemetry HUD (Updates cleanly on chapter transitions) */}
+          {/* Live Cinematic Environmental Telemetry HUD */}
           <div
-            className="absolute top-28 right-6 md:right-12 hidden sm:flex items-center gap-2 font-mono text-[9px] text-[#B59A6A]/80 tracking-[0.25em] z-20 pointer-events-none transition-opacity duration-300"
-            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
+            className="absolute top-28 right-6 md:right-12 hidden sm:flex items-center gap-2.5 font-mono text-[9px] text-[#B59A6A] tracking-[0.25em] z-20 pointer-events-none transition-opacity duration-300"
+            style={{ textShadow: '0 1px 12px rgba(0,0,0,0.9)' }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A] animate-pulse" />
-            <span className="text-[#8C8C87]">CAM:</span>
-            <span>{currentChapter.focalLabel}</span>
-            <span className="text-[#8C8C87]/40">·</span>
-            <span className="text-[#D8D3CA]/80 hidden md:inline">{currentChapter.shotType}</span>
+            <span className="text-[#FAF9F6]/90 font-medium">{currentChapter.navTitle}</span>
+            <span className="text-[#B59A6A]/50">·</span>
+            <span className="text-[#FAF9F6]/80">{currentChapter.timeLabel}</span>
+            <span className="text-[#B59A6A]/50">·</span>
+            <span className="text-[#FAF9F6]/60 hidden lg:inline">{currentChapter.focalLabel}</span>
           </div>
 
           {/* ========================================================= */}
@@ -702,7 +1162,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
 
                 {/* Single Minimal Statement */}
                 <p
-                  className="font-mono text-[10px] sm:text-xs text-[#D8D3CA]/90 tracking-[0.22em] uppercase font-light mt-3 sm:mt-4"
+                  className="font-mono text-[10px] sm:text-xs text-[#D8D3CA]/90 tracking-[0.22em] uppercase font-light mt-3 sm:mt-4 max-w-lg"
                   style={{
                     textShadow: '0 2px 18px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.9)',
                   }}
@@ -713,7 +1173,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
                 {/* Minimal Editorial Micro Action (Scene 01 / Scene 06) */}
                 {chapter.cta?.type === 'scroll' && (
                   <div
-                    className="mt-5 sm:mt-6 flex items-center gap-2.5 font-mono text-[9px] sm:text-[10px] text-[#8C8C87] tracking-[0.28em] uppercase"
+                    className="mt-5 sm:mt-6 flex items-center gap-2.5 font-mono text-[9px] sm:text-[10px] text-[#FAF9F6]/80 tracking-[0.28em] uppercase"
                     style={{
                       textShadow: '0 2px 12px rgba(0,0,0,0.9)',
                     }}
@@ -728,9 +1188,9 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
                     <button
                       type="button"
                       onClick={onOpenEnquiry}
-                      className="px-5 py-2.5 sm:px-6 sm:py-3 text-[10px] sm:text-[11px] font-mono tracking-[0.25em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] hover:text-[#111315] transition-colors duration-300 shadow-xl cursor-pointer"
+                      className="px-6 py-3 text-[10px] sm:text-[11px] font-mono tracking-[0.25em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] hover:text-[#111315] transition-colors duration-300 shadow-xl cursor-pointer"
                     >
-                      Enquire Now
+                      {chapter.cta.label}
                     </button>
                     <a
                       href="#residences"
@@ -806,4 +1266,5 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     </section>
   );
 };
+
 
