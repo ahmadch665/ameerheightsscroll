@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Navigation, Compass, ExternalLink, Plus, Minus, RotateCcw, Copy, Check } from 'lucide-react';
 import { clamp, lerp } from '../utils/formatters';
 
@@ -30,6 +30,122 @@ const MAP_COORDS = {
   northernBypass: { x: 495, y: 530 },
 };
 
+/**
+ * Smoothstep interpolation function for smooth acceleration and deceleration
+ */
+function smoothstep(min: number, max: number, value: number): number {
+  const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  return x * x * (3 - 2 * x);
+}
+
+/**
+ * Camera Waypoints across the 7 Controlled Cinematic States
+ */
+interface CameraWaypoint {
+  progress: number;
+  scale: number;
+  panX: number;
+  panY: number;
+}
+
+const CAMERA_WAYPOINTS: CameraWaypoint[] = [
+  { progress: 0.00, scale: 1.00, panX: 0, panY: 0 },       // State 1: Wide City View
+  { progress: 0.15, scale: 1.00, panX: 0, panY: 0 },       // State 1 Hold
+  { progress: 0.23, scale: 2.10, panX: -180, panY: -70 },  // State 2: Approach BZU Chowk
+  { progress: 0.31, scale: 2.10, panX: -180, panY: -70 },  // State 2 Hold
+  { progress: 0.39, scale: 2.35, panX: -190, panY: -60 },  // State 3: Bosan Road corridor
+  { progress: 0.46, scale: 2.35, panX: -190, panY: -60 },  // State 3 Hold
+  { progress: 0.53, scale: 2.00, panX: -140, panY: -50 },  // State 4: Multan Metropolis Node
+  { progress: 0.60, scale: 2.00, panX: -140, panY: -50 },  // State 4 Hold
+  { progress: 0.67, scale: 1.85, panX: -110, panY: 40 },   // State 5: North Corridor (DHA Multan)
+  { progress: 0.74, scale: 1.85, panX: -110, panY: 40 },   // State 5 Hold
+  { progress: 0.81, scale: 1.75, panX: 40, panY: -150 },   // State 6: Southwest Corridor (Airport)
+  { progress: 0.87, scale: 1.75, panX: 40, panY: -150 },   // State 6 Hold
+  { progress: 0.94, scale: 2.40, panX: -180, panY: -90 },  // State 7: Settle on Tower Facade
+  { progress: 1.00, scale: 2.40, panX: -180, panY: -90 },  // State 7 Hold
+];
+
+/**
+ * Interpolate camera state across waypoints using smoothstep easing
+ */
+function getCameraTransform(p: number) {
+  if (p <= CAMERA_WAYPOINTS[0].progress) {
+    const wp = CAMERA_WAYPOINTS[0];
+    return { scale: wp.scale, panX: wp.panX, panY: wp.panY };
+  }
+  const lastIndex = CAMERA_WAYPOINTS.length - 1;
+  if (p >= CAMERA_WAYPOINTS[lastIndex].progress) {
+    const wp = CAMERA_WAYPOINTS[lastIndex];
+    return { scale: wp.scale, panX: wp.panX, panY: wp.panY };
+  }
+
+  // Find surrounding waypoints
+  for (let i = 0; i < lastIndex; i++) {
+    const w1 = CAMERA_WAYPOINTS[i];
+    const w2 = CAMERA_WAYPOINTS[i + 1];
+    if (p >= w1.progress && p <= w2.progress) {
+      const t = smoothstep(w1.progress, w2.progress, p);
+      return {
+        scale: lerp(w1.scale, w2.scale, t),
+        panX: lerp(w1.panX, w2.panX, t),
+        panY: lerp(w1.panY, w2.panY, t),
+      };
+    }
+  }
+
+  return { scale: 1.0, panX: 0, panY: 0 };
+}
+
+/**
+ * Calculate deliberate, slow text state transition
+ * Returns: { opacity, translateY, scale, isVisible }
+ */
+function getTextStateMetrics(
+  p: number,
+  enterStart: number,
+  enterEnd: number,
+  exitStart: number,
+  exitEnd: number
+) {
+  if (p < enterStart || p > exitEnd) {
+    return { opacity: 0, translateY: 14, scale: 0.985, isVisible: false };
+  }
+
+  if (p >= enterStart && p < enterEnd) {
+    // Deliberate entering transition
+    const t = smoothstep(enterStart, enterEnd, p);
+    return {
+      opacity: t,
+      translateY: lerp(14, 0, t),
+      scale: lerp(0.985, 1.0, t),
+      isVisible: true,
+    };
+  }
+
+  if (p >= enterEnd && p <= exitStart) {
+    // Settled, stable, fully readable state
+    return {
+      opacity: 1.0,
+      translateY: 0,
+      scale: 1.0,
+      isVisible: true,
+    };
+  }
+
+  if (p > exitStart && p <= exitEnd) {
+    // Gentle exit with slight upward glide
+    const t = smoothstep(exitStart, exitEnd, p);
+    return {
+      opacity: 1.0 - t,
+      translateY: lerp(0, -10, t),
+      scale: lerp(1.0, 1.01, t),
+      isVisible: true,
+    };
+  }
+
+  return { opacity: 0, translateY: 0, scale: 1, isVisible: false };
+}
+
 export const LocationSection: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
@@ -42,22 +158,28 @@ export const LocationSection: React.FC = () => {
     totalScrollable: 1,
   });
 
-  // DOM direct-manipulation refs for 60fps transform & opacity updates
+  // DOM direct-manipulation refs for GPU-composited 60fps updates
   const svgMapRef = useRef<SVGSVGElement>(null);
   const mapGroupRef = useRef<SVGGElement>(null);
-  const stage1TextRef = useRef<HTMLDivElement>(null);
-  const stage2MultanRef = useRef<HTMLDivElement>(null);
-  const stage2BosanRef = useRef<HTMLDivElement>(null);
-  const stage2ChowkRef = useRef<HTMLDivElement>(null);
+
+  // 7 Controlled Text State Containers
+  const state1Ref = useRef<HTMLDivElement>(null);
+  const state2Ref = useRef<HTMLDivElement>(null);
+  const state3Ref = useRef<HTMLDivElement>(null);
+  const state4Ref = useRef<HTMLDivElement>(null);
+  const state5Ref = useRef<HTMLDivElement>(null);
+  const state6Ref = useRef<HTMLDivElement>(null);
+  const state7Ref = useRef<HTMLDivElement>(null);
+
+  // Marker and Route vector refs
   const markerPulseRef = useRef<SVGCircleElement>(null);
   const markerDotRef = useRef<SVGCircleElement>(null);
   const markerLabelRef = useRef<SVGTextElement>(null);
   const markerSubLabelRef = useRef<SVGTextElement>(null);
   const routeDhaRef = useRef<SVGPathElement>(null);
   const routeAirportRef = useRef<SVGPathElement>(null);
-  const distanceDhaRef = useRef<HTMLDivElement>(null);
-  const distanceAirportRef = useRef<HTMLDivElement>(null);
-  const commercialStatementRef = useRef<HTMLDivElement>(null);
+
+  // Building Reveal & HUD
   const buildingRevealRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const telemetryHudRef = useRef<HTMLDivElement>(null);
@@ -111,7 +233,7 @@ export const LocationSection: React.FC = () => {
     setTimeout(() => setCopiedCoords(false), 2400);
   };
 
-  // 60 FPS Render loop with direct DOM updates
+  // 60 FPS Render loop with smooth interpolation
   useEffect(() => {
     let isRunning = true;
 
@@ -124,7 +246,7 @@ export const LocationSection: React.FC = () => {
         routeDhaRef.current.style.strokeDasharray = `${dhaPathLength}`;
         routeDhaRef.current.style.strokeDashoffset = `${dhaPathLength}`;
       } catch {
-        // Fallback if SVG measurement is not available
+        // Fallback
       }
     }
     if (routeAirportRef.current) {
@@ -144,285 +266,178 @@ export const LocationSection: React.FC = () => {
       const current = currentProgressRef.current;
       const delta = target - current;
 
+      // Smooth, responsive interpolation:
+      // Snaps cleanly when within micro-tolerance to prevent perpetual calculations
       let p: number;
-      if (Math.abs(delta) < 0.0001) {
+      if (Math.abs(delta) < 0.00008) {
         p = target;
       } else {
-        p = current + delta * 0.18; // Smooth cinematic damping
+        // Damping factor of 0.16 provides immediate response to scroll input
+        // while eliminating micro-stutters during slow 10-30% scrolls
+        p = current + delta * 0.16;
       }
       currentProgressRef.current = p;
 
-      // Update vertical progress hairline
+      // Update vertical progress indicator
       if (progressBarRef.current) {
         progressBarRef.current.style.transform = `scaleY(${p})`;
       }
 
       // =======================================================================
-      // CAMERA MOTION & ZOOM TRAJECTORY:
-      // Phase 0.00 -> 0.24: Wide Multan City Context (Scale 1.0, Pan center)
-      // Phase 0.24 -> 0.50: Approach Bosan Road & Main BZU Chowk (Scale 1.0 -> 2.6, Pan towards (500, 440))
-      // Phase 0.50 -> 0.72: Close inspection of Proximity & Routes (Scale 2.6 -> 2.1, balanced framing)
-      // Phase 0.72 -> 0.94: Architectural Tower Transition (Scale 2.1 -> 3.2, map fades out, building fades in)
-      // Phase 0.94 -> 1.00: Fade towards practical map
+      // CAMERA INTERPOLATION ACROSS WAYPOINTS
       // =======================================================================
-      let mapScale: number;
-      let mapPanX: number;
-      let mapPanY: number;
-      let mapOpacity = 1.0;
+      const camera = getCameraTransform(p);
 
-      if (p < 0.24) {
-        // Stage 1: Wide City View
-        mapScale = 1.0;
-        mapPanX = 0;
-        mapPanY = 0;
-      } else if (p < 0.50) {
-        // Stage 2: Smooth Glide to Main BZU Chowk
-        const t = (p - 0.24) / 0.26;
-        const s = t * t * (3 - 2 * t); // Smoothstep
-        mapScale = lerp(1.0, 2.7, s);
-        // Translate center (500, 400) to viewport center
-        mapPanX = lerp(0, -220, s);
-        mapPanY = lerp(0, -90, s);
-      } else if (p < 0.72) {
-        // Stage 3: Proximity & Routes Reveal (Framing Ameer Heights + DHA + Airport)
-        const t = (p - 0.50) / 0.22;
-        const s = t * t * (3 - 2 * t);
-        mapScale = lerp(2.7, 2.05, s);
-        mapPanX = lerp(-220, -110, s);
-        mapPanY = lerp(-90, -40, s);
-      } else if (p < 0.94) {
-        // Stage 4: Cinematic Transition from Map to Building
-        const t = (p - 0.72) / 0.22;
-        const s = t * t * (3 - 2 * t);
-        mapScale = lerp(2.05, 2.9, s);
-        mapPanX = lerp(-110, -200, s);
-        mapPanY = lerp(-40, -100, s);
-        mapOpacity = clamp(1 - t * 1.25, 0, 1);
-      } else {
-        // Stage 5: Final Glide
-        mapScale = 2.9;
-        mapPanX = -200;
-        mapPanY = -100;
-        mapOpacity = 0;
+      // Map fade out during State 7 (Building Transition: 0.88 -> 0.96)
+      let mapOpacity = 1.0;
+      if (p >= 0.88) {
+        const t = smoothstep(0.88, 0.96, p);
+        mapOpacity = 1.0 - t;
       }
 
       if (mapGroupRef.current) {
         mapGroupRef.current.setAttribute(
           'transform',
-          `translate(${mapPanX}, ${mapPanY}) scale(${mapScale})`
+          `translate(${camera.panX.toFixed(2)}, ${camera.panY.toFixed(2)}) scale(${camera.scale.toFixed(3)})`
         );
       }
       if (svgMapRef.current) {
-        svgMapRef.current.style.opacity = `${mapOpacity}`;
+        svgMapRef.current.style.opacity = `${mapOpacity.toFixed(3)}`;
       }
 
       // =======================================================================
-      // TYPOGRAPHY & OVERLAY OPACITY / TRANSFORMS
+      // 7 CONTROLLED TEXT STATES (Deliberate Screen Time & Clean Crossfades)
       // =======================================================================
-
-      // 1. Stage 1 Opening Statement: "CONNECTED TO THE CITY."
-      // Visible between 0.00 and 0.23
-      if (stage1TextRef.current) {
-        let op = 0;
-        let transY = 0;
-        if (p < 0.18) {
-          op = clamp(p / 0.06, 0, 1);
-          transY = lerp(16, 0, op);
-        } else if (p <= 0.25) {
-          op = clamp(1 - (p - 0.18) / 0.06, 0, 1);
-          transY = lerp(0, -16, 1 - op);
-        }
-        stage1TextRef.current.style.opacity = `${op}`;
-        stage1TextRef.current.style.transform = `translate3d(0, ${transY}px, 0)`;
-        stage1TextRef.current.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
-      }
-
-      // 2. Stage 2 Sequential Reveals: "MULTAN" -> "BOSAN ROAD" -> "MAIN BZU CHOWK"
-      // Visible between 0.24 and 0.49
-      const updateLocationPhrase = (
+      const applyTextState = (
         el: HTMLDivElement | null,
-        enterP: number,
-        peakP: number,
-        exitP: number
+        metrics: { opacity: number; translateY: number; scale: number; isVisible: boolean }
       ) => {
         if (!el) return;
-        let op = 0;
-        let transY = 12;
-        let scale = 0.98;
-        if (p >= enterP && p <= exitP) {
-          if (p < peakP) {
-            const t = (p - enterP) / (peakP - enterP);
-            op = t;
-            transY = lerp(14, 0, t);
-            scale = lerp(0.98, 1, t);
-          } else {
-            const t = (p - peakP) / (exitP - peakP);
-            op = clamp(1 - t * 1.5, 0, 1);
-            transY = lerp(0, -10, t);
-            scale = lerp(1, 1.02, t);
+        if (!metrics.isVisible) {
+          if (el.style.opacity !== '0') {
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
           }
+          return;
         }
-        el.style.opacity = `${op}`;
-        el.style.transform = `translate3d(0, ${transY}px, 0) scale(${scale})`;
+        el.style.opacity = `${metrics.opacity.toFixed(3)}`;
+        el.style.transform = `translate3d(0, ${metrics.translateY.toFixed(1)}px, 0) scale(${metrics.scale.toFixed(3)})`;
+        el.style.pointerEvents = metrics.opacity > 0.6 ? 'auto' : 'none';
       };
 
-      updateLocationPhrase(stage2MultanRef.current, 0.22, 0.30, 0.45);
-      updateLocationPhrase(stage2BosanRef.current, 0.29, 0.37, 0.47);
-      updateLocationPhrase(stage2ChowkRef.current, 0.36, 0.44, 0.52);
+      // State 1: "CONNECTED TO THE CITY." (Wide City Context)
+      // Progress: 0.00 -> 0.16
+      const s1 = getTextStateMetrics(p, 0.00, 0.03, 0.12, 0.16);
+      applyTextState(state1Ref.current, s1);
 
-      // 3. Custom Architectural Marker Pulse & Label
-      // Gradually emerges as camera approaches Bosan Road (p >= 0.28)
+      // State 2: "MAIN BZU CHOWK" (Camera Approaches Junction)
+      // Progress: 0.17 -> 0.31
+      const s2 = getTextStateMetrics(p, 0.17, 0.20, 0.28, 0.31);
+      applyTextState(state2Ref.current, s2);
+
+      // State 3: "BOSAN ROAD" (Primary Arterial Spine Focus)
+      // Progress: 0.33 -> 0.46
+      const s3 = getTextStateMetrics(p, 0.33, 0.36, 0.43, 0.46);
+      applyTextState(state3Ref.current, s3);
+
+      // State 4: "MULTAN" (Metropolitan Prominence & Marker Focus)
+      // Progress: 0.48 -> 0.60
+      const s4 = getTextStateMetrics(p, 0.48, 0.51, 0.57, 0.60);
+      applyTextState(state4Ref.current, s4);
+
+      // State 5: "2.7 KM* DHA MULTAN" (North Route Focus)
+      // Progress: 0.62 -> 0.74
+      const s5 = getTextStateMetrics(p, 0.62, 0.65, 0.71, 0.74);
+      applyTextState(state5Ref.current, s5);
+
+      // State 6: "11 KM* MULTAN INTERNATIONAL AIRPORT" (Southwest Route Focus)
+      // Progress: 0.76 -> 0.87
+      const s6 = getTextStateMetrics(p, 0.76, 0.79, 0.85, 0.87);
+      applyTextState(state6Ref.current, s6);
+
+      // State 7: "AMEER HEIGHTS TOWER 10" (Architectural Building Transition)
+      // Progress: 0.89 -> 0.99
+      const s7 = getTextStateMetrics(p, 0.89, 0.92, 0.98, 1.00);
+      applyTextState(state7Ref.current, s7);
+
+      // =======================================================================
+      // ARCHITECTURAL MARKER & ROUTE ANIMATIONS
+      // =======================================================================
+      // Marker emerges as camera approaches Bosan Road (p >= 0.20)
       if (markerDotRef.current && markerPulseRef.current) {
-        const markerAlpha = clamp((p - 0.24) / 0.12, 0, 1) * mapOpacity;
-        markerDotRef.current.setAttribute('opacity', `${markerAlpha}`);
-        markerPulseRef.current.setAttribute('opacity', `${markerAlpha * 0.4}`);
+        const markerAlpha = clamp((p - 0.20) / 0.10, 0, 1) * mapOpacity;
+        markerDotRef.current.setAttribute('opacity', `${markerAlpha.toFixed(2)}`);
+        markerPulseRef.current.setAttribute('opacity', `${(markerAlpha * 0.45).toFixed(2)}`);
 
         if (markerLabelRef.current && markerSubLabelRef.current) {
-          const labelAlpha = clamp((p - 0.34) / 0.10, 0, 1) * mapOpacity;
-          markerLabelRef.current.setAttribute('opacity', `${labelAlpha}`);
-          markerSubLabelRef.current.setAttribute('opacity', `${labelAlpha * 0.85}`);
+          const labelAlpha = clamp((p - 0.26) / 0.08, 0, 1) * mapOpacity;
+          markerLabelRef.current.setAttribute('opacity', `${labelAlpha.toFixed(2)}`);
+          markerSubLabelRef.current.setAttribute('opacity', `${(labelAlpha * 0.85).toFixed(2)}`);
         }
       }
 
-      // 4. Stage 3 Proximity & Routes: 2.7 KM DHA Multan & 11 KM Airport
-      // Progress 0.48 -> 0.72
-      const isRouteActive = p >= 0.48 && p <= 0.74;
-
-      // Draw DHA Route
+      // Draw DHA Route (Synchronized with State 5: 0.62 -> 0.74)
       if (routeDhaRef.current) {
-        if (p < 0.48) {
+        if (p < 0.61) {
           routeDhaRef.current.style.strokeDashoffset = `${dhaPathLength}`;
           routeDhaRef.current.setAttribute('opacity', '0');
         } else if (p <= 0.74) {
-          const t = clamp((p - 0.48) / 0.10, 0, 1);
-          routeDhaRef.current.style.strokeDashoffset = `${lerp(dhaPathLength, 0, t)}`;
-          routeDhaRef.current.setAttribute('opacity', `${mapOpacity * 0.75}`);
+          const t = clamp((p - 0.61) / 0.08, 0, 1);
+          routeDhaRef.current.style.strokeDashoffset = `${lerp(dhaPathLength, 0, t).toFixed(1)}`;
+          routeDhaRef.current.setAttribute('opacity', `${(mapOpacity * 0.85).toFixed(2)}`);
         } else {
-          routeDhaRef.current.setAttribute('opacity', `${clamp((0.78 - p) / 0.04, 0, 1) * 0.75}`);
+          const fadeOut = clamp(1 - (p - 0.74) / 0.04, 0, 1);
+          routeDhaRef.current.setAttribute('opacity', `${(fadeOut * 0.85).toFixed(2)}`);
         }
       }
 
-      // Draw Airport Route
+      // Draw Airport Route (Synchronized with State 6: 0.76 -> 0.87)
       if (routeAirportRef.current) {
-        if (p < 0.52) {
+        if (p < 0.75) {
           routeAirportRef.current.style.strokeDashoffset = `${airportPathLength}`;
           routeAirportRef.current.setAttribute('opacity', '0');
-        } else if (p <= 0.74) {
-          const t = clamp((p - 0.52) / 0.12, 0, 1);
-          routeAirportRef.current.style.strokeDashoffset = `${lerp(airportPathLength, 0, t)}`;
-          routeAirportRef.current.setAttribute('opacity', `${mapOpacity * 0.75}`);
+        } else if (p <= 0.87) {
+          const t = clamp((p - 0.75) / 0.08, 0, 1);
+          routeAirportRef.current.style.strokeDashoffset = `${lerp(airportPathLength, 0, t).toFixed(1)}`;
+          routeAirportRef.current.setAttribute('opacity', `${(mapOpacity * 0.85).toFixed(2)}`);
         } else {
-          routeAirportRef.current.setAttribute('opacity', `${clamp((0.78 - p) / 0.04, 0, 1) * 0.75}`);
+          const fadeOut = clamp(1 - (p - 0.87) / 0.04, 0, 1);
+          routeAirportRef.current.setAttribute('opacity', `${(fadeOut * 0.85).toFixed(2)}`);
         }
       }
 
-      // Distance Typography: DHA Multan
-      if (distanceDhaRef.current) {
-        let op = 0;
-        let transY = 16;
-        if (isRouteActive) {
-          if (p < 0.56) {
-            const t = clamp((p - 0.49) / 0.06, 0, 1);
-            op = t;
-            transY = lerp(16, 0, t);
-          } else if (p < 0.69) {
-            op = 1;
-            transY = 0;
-          } else {
-            const t = clamp((p - 0.69) / 0.04, 0, 1);
-            op = 1 - t;
-            transY = lerp(0, -12, t);
-          }
-        }
-        distanceDhaRef.current.style.opacity = `${op}`;
-        distanceDhaRef.current.style.transform = `translate3d(0, ${transY}px, 0)`;
-      }
-
-      // Distance Typography: Airport
-      if (distanceAirportRef.current) {
-        let op = 0;
-        let transY = 16;
-        if (isRouteActive) {
-          if (p < 0.58) {
-            const t = clamp((p - 0.53) / 0.06, 0, 1);
-            op = t;
-            transY = lerp(16, 0, t);
-          } else if (p < 0.69) {
-            op = 1;
-            transY = 0;
-          } else {
-            const t = clamp((p - 0.69) / 0.04, 0, 1);
-            op = 1 - t;
-            transY = lerp(0, -12, t);
-          }
-        }
-        distanceAirportRef.current.style.opacity = `${op}`;
-        distanceAirportRef.current.style.transform = `translate3d(0, ${transY}px, 0)`;
-      }
-
-      // Commercial statement: "IN THE HEART OF A GROWING ADDRESS."
-      if (commercialStatementRef.current) {
-        let op = 0;
-        let transY = 14;
-        if (p >= 0.55 && p <= 0.74) {
-          if (p < 0.62) {
-            const t = clamp((p - 0.55) / 0.06, 0, 1);
-            op = t;
-            transY = lerp(14, 0, t);
-          } else if (p < 0.70) {
-            op = 1;
-            transY = 0;
-          } else {
-            const t = clamp((p - 0.70) / 0.04, 0, 1);
-            op = 1 - t;
-            transY = lerp(0, -10, t);
-          }
-        }
-        commercialStatementRef.current.style.opacity = `${op}`;
-        commercialStatementRef.current.style.transform = `translate3d(0, ${transY}px, 0)`;
-      }
-
-      // 5. Stage 4: Cinematic Architectural Building Reveal
-      // CITY -> LOCATION -> ADDRESS -> BUILDING
-      // Progress 0.72 -> 0.95
+      // Building Reveal Imagery Fade-in (State 7: 0.89 -> 0.99)
       if (buildingRevealRef.current) {
-        let op = 0;
-        let scale = 1.08;
-        let transY = 20;
-
-        if (p >= 0.72 && p <= 0.98) {
-          if (p < 0.82) {
-            const t = (p - 0.72) / 0.10;
-            const s = t * t * (3 - 2 * t);
-            op = s;
-            scale = lerp(1.08, 1.0, s);
-            transY = lerp(20, 0, s);
-          } else if (p <= 0.93) {
-            op = 1.0;
-            scale = 1.0;
-            transY = 0;
-          } else {
-            const t = (p - 0.93) / 0.05;
-            op = clamp(1 - t * 1.5, 0, 1);
-            transY = lerp(0, -16, t);
-          }
+        if (p < 0.88) {
+          buildingRevealRef.current.style.opacity = '0';
+          buildingRevealRef.current.style.pointerEvents = 'none';
+        } else if (p <= 0.98) {
+          const t = smoothstep(0.88, 0.94, p);
+          buildingRevealRef.current.style.opacity = `${t.toFixed(3)}`;
+          buildingRevealRef.current.style.transform = `translate3d(0, ${lerp(16, 0, t).toFixed(1)}px, 0) scale(${lerp(1.05, 1.0, t).toFixed(3)})`;
+          buildingRevealRef.current.style.pointerEvents = t > 0.6 ? 'auto' : 'none';
+        } else {
+          const exitT = smoothstep(0.98, 1.0, p);
+          buildingRevealRef.current.style.opacity = `${(1.0 - exitT).toFixed(3)}`;
+          buildingRevealRef.current.style.transform = `translate3d(0, ${lerp(0, -12, exitT).toFixed(1)}px, 0) scale(1.0)`;
         }
-        buildingRevealRef.current.style.opacity = `${op}`;
-        buildingRevealRef.current.style.transform = `translate3d(0, ${transY}px, 0) scale(${scale})`;
-        buildingRevealRef.current.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
       }
 
-      // 6. Telemetry HUD label update
+      // Telemetry HUD Context Indicator
       if (telemetryHudRef.current) {
-        let hudText = 'CITY METROPOLIS CONTEXT · WIDE';
-        if (p >= 0.24 && p < 0.48) {
-          hudText = 'APPROACHING BOSAN ROAD CORRIDOR';
-        } else if (p >= 0.48 && p < 0.72) {
-          hudText = 'STRATEGIC PROXIMITY · VERIFIED ARTERIALS';
-        } else if (p >= 0.72 && p < 0.95) {
-          hudText = 'DESTINATION · AMEER HEIGHTS TOWER 10';
-        } else if (p >= 0.95) {
-          hudText = 'GEOGRAPHIC SPECIFICATIONS · PRACTICAL MAP';
+        let hudText = '01 / CITY METROPOLIS CONTEXT';
+        if (p >= 0.17 && p < 0.32) {
+          hudText = '02 / APPROACHING MAIN BZU CHOWK';
+        } else if (p >= 0.32 && p < 0.47) {
+          hudText = '03 / BOSAN ROAD ARTERIAL SPINE';
+        } else if (p >= 0.47 && p < 0.61) {
+          hudText = '04 / MULTAN CIVIC INTERSECTION';
+        } else if (p >= 0.61 && p < 0.75) {
+          hudText = '05 / NORTH CORRIDOR · DHA MULTAN 2.7 KM*';
+        } else if (p >= 0.75 && p < 0.88) {
+          hudText = '06 / SOUTHWEST CORRIDOR · AIRPORT 11 KM*';
+        } else if (p >= 0.88) {
+          hudText = '07 / DESTINATION · AMEER HEIGHTS TOWER 10';
         }
         if (telemetryHudRef.current.innerText !== hudText) {
           telemetryHudRef.current.innerText = hudText;
@@ -493,14 +508,14 @@ export const LocationSection: React.FC = () => {
     >
       {/* ======================================================================= */}
       {/* PART 1: CINEMATIC SCROLL-LINKED LOCATION VOYAGE                        */}
-      {/* 360vh Scroll Track with 100vh Sticky Viewport Window                    */}
+      {/* 460vh Scroll Track provides generous, slow screen time for all states   */}
       {/* ======================================================================= */}
-      <div className="relative w-full h-[360vh]">
+      <div className="relative w-full h-[460vh]">
         <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center bg-[#111315]">
           {/* Subtle Ambient Radial Illuminations */}
           <div className="absolute inset-0 pointer-events-none z-0">
             <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-20"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full opacity-20"
               style={{
                 background: 'radial-gradient(circle, rgba(181, 154, 106, 0.12) 0%, rgba(181, 154, 106, 0.03) 45%, transparent 70%)',
               }}
@@ -511,7 +526,6 @@ export const LocationSection: React.FC = () => {
 
           {/* ======================================================================= */}
           {/* ARCHITECTURAL VECTOR MAP CANVAS                                         */}
-          {/* Minimal dark cartographic visualization with smooth camera transform    */}
           {/* ======================================================================= */}
           <svg
             ref={svgMapRef}
@@ -543,8 +557,8 @@ export const LocationSection: React.FC = () => {
 
               {/* Route Dash Pattern */}
               <linearGradient id="routeGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#B59A6A" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#CBB488" stopOpacity="0.8" />
+                <stop offset="0%" stopColor="#B59A6A" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#CBB488" stopOpacity="0.85" />
               </linearGradient>
             </defs>
 
@@ -592,7 +606,6 @@ export const LocationSection: React.FC = () => {
               {/* 2. Secondary Urban Road Network & Grid Blocks       */}
               {/* =================================================== */}
               <g stroke="#1D2124" strokeWidth="0.8" opacity="0.65" fill="none">
-                {/* East-West Cross streets */}
                 <line x1="260" y1="200" x2="780" y2="210" />
                 <line x1="280" y1="280" x2="820" y2="295" />
                 <line x1="250" y1="360" x2="840" y2="370" />
@@ -601,7 +614,6 @@ export const LocationSection: React.FC = () => {
                 <line x1="280" y1="600" x2="860" y2="590" />
                 <line x1="290" y1="680" x2="820" y2="670" />
 
-                {/* Diagonal & Secondary connections */}
                 <line x1="360" y1="120" x2="420" y2="760" />
                 <line x1="620" y1="120" x2="680" y2="760" />
                 <line x1="720" y1="180" x2="790" y2="680" />
@@ -612,7 +624,7 @@ export const LocationSection: React.FC = () => {
               {/* =================================================== */}
               {/* 3. Major Metropolitan Arterials                     */}
               {/* =================================================== */}
-              {/* Northern Bypass (East-West ring connecting Bosan Rd) */}
+              {/* Northern Bypass */}
               <path
                 d="M 200 550 Q 360 540, 500 530 T 840 505"
                 fill="none"
@@ -640,7 +652,7 @@ export const LocationSection: React.FC = () => {
                 opacity="0.75"
               />
 
-              {/* Old Bahawalpur & Abdali Road toward Multan Cantt / Airport */}
+              {/* Old Bahawalpur & Abdali Road toward Airport */}
               <path
                 d="M 500 530 Q 420 620, 330 720"
                 fill="none"
@@ -651,14 +663,13 @@ export const LocationSection: React.FC = () => {
 
               {/* =================================================== */}
               {/* 4. THE PRIMARY SPINE: BOSAN ROAD                    */}
-              {/* Elegant warm bronze spine passing through BZU Chowk */}
               {/* =================================================== */}
               <path
                 d="M 480 800 L 490 640 L 495 530 L 500 440 L 510 320 L 520 180 L 525 80"
                 fill="none"
                 stroke="#B59A6A"
                 strokeWidth="3.2"
-                opacity="0.88"
+                opacity="0.9"
                 strokeLinecap="round"
               />
               <path
@@ -666,7 +677,7 @@ export const LocationSection: React.FC = () => {
                 fill="none"
                 stroke="#F3F0E9"
                 strokeWidth="0.8"
-                opacity="0.45"
+                opacity="0.5"
                 strokeDasharray="4 4"
               />
               <text
@@ -720,7 +731,7 @@ export const LocationSection: React.FC = () => {
                 </text>
               </g>
 
-              {/* BZU Campus Entrance Context (Immediate north of chowk) */}
+              {/* BZU Campus Entrance Context */}
               <g transform="translate(520, 420)">
                 <text
                   x="8"
@@ -735,7 +746,7 @@ export const LocationSection: React.FC = () => {
               </g>
 
               {/* =================================================== */}
-              {/* 6. Animated Proximity Route Vectors (Subtle lines)  */}
+              {/* 6. Animated Proximity Route Vectors                 */}
               {/* =================================================== */}
               {/* Route: Ameer Heights -> DHA Multan (North) */}
               <path
@@ -743,7 +754,7 @@ export const LocationSection: React.FC = () => {
                 d="M 500 440 L 507 330 L 515 230"
                 fill="none"
                 stroke="url(#routeGold)"
-                strokeWidth="1.6"
+                strokeWidth="1.8"
                 strokeLinecap="round"
                 opacity="0"
               />
@@ -754,17 +765,15 @@ export const LocationSection: React.FC = () => {
                 d="M 500 440 L 495 530 Q 425 615, 330 720"
                 fill="none"
                 stroke="url(#routeGold)"
-                strokeWidth="1.6"
+                strokeWidth="1.8"
                 strokeLinecap="round"
                 opacity="0"
               />
 
               {/* =================================================== */}
               {/* 7. CUSTOM ARCHITECTURAL PROJECT LOCATION MARKER     */}
-              {/* At exact coordinates: Main BZU Chowk                */}
               {/* =================================================== */}
               <g transform={`translate(${MAP_COORDS.ameerHeights.x}, ${MAP_COORDS.ameerHeights.y})`}>
-                {/* Slow, restrained expanding radial pulse */}
                 <circle
                   ref={markerPulseRef}
                   r="24"
@@ -773,12 +782,8 @@ export const LocationSection: React.FC = () => {
                   style={{ animationDuration: '4s' }}
                   opacity="0"
                 />
-
-                {/* Concentric precision target circles */}
                 <circle r="12" fill="none" stroke="#B59A6A" strokeWidth="0.5" strokeDasharray="1 2" opacity="0.5" />
                 <circle r="7" fill="none" stroke="#B59A6A" strokeWidth="0.8" opacity="0.8" />
-
-                {/* Primary Luminous Center Dot */}
                 <circle
                   ref={markerDotRef}
                   r="3.2"
@@ -787,8 +792,6 @@ export const LocationSection: React.FC = () => {
                   strokeWidth="1.2"
                   opacity="0"
                 />
-
-                {/* Refined Luxury Architectural Signature Label */}
                 <g transform="translate(18, -4)">
                   <text
                     ref={markerLabelRef}
@@ -798,7 +801,7 @@ export const LocationSection: React.FC = () => {
                     fontSize="9.5"
                     fontFamily="Cormorant Garamond, serif"
                     letterSpacing="0.14em"
-                    fontWeight="500"
+                    fontWeight="600"
                     opacity="0"
                   >
                     AMEER HEIGHTS
@@ -822,202 +825,305 @@ export const LocationSection: React.FC = () => {
           </svg>
 
           {/* ======================================================================= */}
-          {/* CINEMATIC EDITORIAL FLOATING TYPOGRAPHY OVERLAYS                        */}
-          {/* Zero boxed cards, zero glassmorphism, background remains dominant        */}
+          {/* ORGANIC CONTRAST VEIL FOR HIGH-READABILITY TYPOGRAPHY                   */}
+          {/* Feathered soft backdrop positioned strictly beneath the active text     */}
+          {/* zone. No cards, no boxes, no borders, completely natural.                */}
           {/* ======================================================================= */}
-
-          {/* Precision Top Reticles & HUD */}
           <div
-            className="absolute top-28 left-6 md:left-16 hidden sm:flex items-center gap-3 font-mono text-[9px] text-[#8C8C87] tracking-[0.25em] z-20 pointer-events-none"
-            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
-          >
-            <div className="w-2.5 h-2.5 border-t border-l border-[#B59A6A]/60" />
-            <span>08 / GEOGRAPHIC POSITIONING</span>
+            className="absolute inset-0 pointer-events-none z-15"
+            style={{
+              background: 'radial-gradient(ellipse 55% 50% at 24% 74%, rgba(17,19,21,0.82) 0%, rgba(17,19,21,0.45) 45%, transparent 75%)',
+            }}
+          />
+
+          {/* Precision Top Reticles & Telemetry HUD */}
+          <div className="absolute top-28 left-6 md:left-16 hidden sm:flex items-center gap-3 font-mono text-[9px] text-[#8C8C87] tracking-[0.25em] z-20 pointer-events-none">
+            <div className="w-2.5 h-2.5 border-t border-l border-[#B59A6A]/70" />
+            <span>08 / GEOGRAPHIC PRECISION</span>
           </div>
 
           <div
             ref={telemetryHudRef}
             className="absolute top-28 right-6 md:right-16 hidden sm:flex items-center gap-2 font-mono text-[9px] text-[#B59A6A] tracking-[0.25em] z-20 pointer-events-none"
-            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
           >
-            CITY METROPOLIS CONTEXT · WIDE
+            01 / CITY METROPOLIS CONTEXT
           </div>
 
-          {/* ------------------------------------------------------------------- */}
-          {/* STAGE 1: OPENING STATEMENT (Wide City Context)                       */}
-          {/* ------------------------------------------------------------------- */}
-          <div
-            ref={stage1TextRef}
-            className="absolute left-6 sm:left-12 md:left-20 lg:left-24 bottom-14 sm:bottom-20 md:bottom-24 max-w-xl md:max-w-2xl z-20 flex flex-col items-start select-none will-change-[transform,opacity]"
-          >
-            <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
-              <span>THE LOCATION</span>
-            </div>
-
-            <h2
-              className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
-              style={{ textShadow: '0 2px 28px rgba(0,0,0,0.95), 0 1px 6px rgba(0,0,0,0.9)' }}
-            >
-              CONNECTED TO
-              <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
-                THE CITY.
-              </span>
-            </h2>
-
-            <p
-              className="font-mono text-[11px] sm:text-xs md:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
-              style={{ textShadow: '0 2px 18px rgba(0,0,0,0.95)' }}
-            >
-              Positioned on Bosan Road, at Main BZU Chowk, Multan.
-            </p>
-          </div>
-
-          {/* ------------------------------------------------------------------- */}
-          {/* STAGE 2: SEQUENTIAL LOCATION PHRASES REVEAL                          */}
-          {/* "MAIN BZU CHOWK" -> "BOSAN ROAD" -> "MULTAN"                         */}
-          {/* ------------------------------------------------------------------- */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-            {/* Phrase 1: MULTAN */}
+          {/* ======================================================================= */}
+          {/* 7 CONTROLLED CINEMATIC TEXT STATES                                      */}
+          {/* Each state occupies a deliberate, generous scroll window with smooth    */}
+          {/* crossfades. Zero overlapping, high contrast, positioned in calm space.   */}
+          {/* ======================================================================= */}
+          <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-end p-6 sm:p-12 md:p-16 lg:p-20">
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 1: CONNECTED TO THE CITY. (Wide City Context)               */}
+            {/* ----------------------------------------------------------------- */}
             <div
-              ref={stage2MultanRef}
-              className="absolute top-1/3 left-8 sm:left-16 md:left-24 opacity-0 flex flex-col will-change-[transform,opacity]"
+              ref={state1Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
             >
-              <span className="font-mono text-[9px] sm:text-[10px] text-[#8C8C87] tracking-[0.3em] uppercase mb-1">
-                METROPOLITAN REGION
-              </span>
-              <span
-                className="font-serif text-2xl sm:text-4xl md:text-5xl text-[#FAF9F6] uppercase tracking-[0.1em]"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.95)' }}
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>THE LOCATION</span>
+              </div>
+              <h2
+                className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
+                style={{
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.95))',
+                }}
               >
-                MULTAN
-              </span>
-            </div>
-
-            {/* Phrase 2: BOSAN ROAD */}
-            <div
-              ref={stage2BosanRef}
-              className="absolute bottom-1/3 right-8 sm:right-16 md:right-28 text-right opacity-0 flex flex-col items-end will-change-[transform,opacity]"
-            >
-              <span className="font-mono text-[9px] sm:text-[10px] text-[#B59A6A] tracking-[0.3em] uppercase mb-1">
-                PRIMARY ARTERIAL SPINE
-              </span>
-              <span
-                className="font-serif text-2xl sm:text-4xl md:text-5xl text-[#FAF9F6] uppercase tracking-[0.1em]"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.95)' }}
+                CONNECTED TO
+                <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
+                  THE CITY.
+                </span>
+              </h2>
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
               >
-                BOSAN ROAD
-              </span>
+                Positioned on Bosan Road, at Main BZU Chowk, Multan.
+              </p>
             </div>
 
-            {/* Phrase 3: MAIN BZU CHOWK */}
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 2: MAIN BZU CHOWK (Camera Approaches Junction)              */}
+            {/* ----------------------------------------------------------------- */}
             <div
-              ref={stage2ChowkRef}
-              className="absolute bottom-16 sm:bottom-20 left-6 sm:left-16 md:left-24 opacity-0 flex flex-col will-change-[transform,opacity]"
+              ref={state2Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
             >
-              <span className="font-mono text-[9px] sm:text-[10px] text-[#B59A6A] tracking-[0.3em] uppercase mb-1">
-                EXACT JUNCTION & ADDRESS
-              </span>
-              <span
-                className="font-serif text-3xl sm:text-5xl md:text-6xl text-[#FAF9F6] uppercase tracking-[0.08em]"
-                style={{ textShadow: '0 2px 24px rgba(0,0,0,0.95)' }}
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>EXACT JUNCTION & ADDRESS</span>
+              </div>
+              <h2
+                className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
+                style={{
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.95))',
+                }}
               >
-                MAIN BZU CHOWK
-              </span>
-              <span className="font-mono text-[10px] sm:text-[11px] text-[#8C8C87] tracking-[0.25em] uppercase mt-2">
-                A STRATEGIC COMMERCIAL PRECINCT
-              </span>
+                MAIN BZU
+                <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
+                  CHOWK.
+                </span>
+              </h2>
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
+              >
+                Multan's High-Visibility Commercial Precinct · Direct University Portal Access
+              </p>
             </div>
-          </div>
 
-          {/* ------------------------------------------------------------------- */}
-          {/* STAGE 3: DISTANCE PRESENTATION & PROXIMITY                           */}
-          {/* Large numbers, asymmetrical placement, no cards                      */}
-          {/* ------------------------------------------------------------------- */}
-          <div className="absolute inset-0 pointer-events-none z-20">
-            {/* Proximity 1: DHA Multan (Top Right / North) */}
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 3: BOSAN ROAD (Primary Arterial Spine)                       */}
+            {/* ----------------------------------------------------------------- */}
             <div
-              ref={distanceDhaRef}
-              className="absolute top-28 sm:top-36 right-6 sm:right-12 md:right-20 lg:right-28 text-right opacity-0 flex flex-col items-end will-change-[transform,opacity]"
+              ref={state3Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
             >
-              <div className="flex items-baseline gap-1">
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>PRIMARY ARTERIAL SPINE</span>
+              </div>
+              <h2
+                className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
+                style={{
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.95))',
+                }}
+              >
+                BOSAN
+                <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
+                  ROAD.
+                </span>
+              </h2>
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
+              >
+                The prestigious commercial and residential lifeline connecting the city to the northern growth corridor.
+              </p>
+            </div>
+
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 4: MULTAN (Metropolitan Prominence & Marker Focus)          */}
+            {/* ----------------------------------------------------------------- */}
+            <div
+              ref={state4Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
+            >
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>METROPOLITAN REGION</span>
+              </div>
+              <h2
+                className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
+                style={{
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.95))',
+                }}
+              >
+                MULTAN,
+                <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
+                  PUNJAB.
+                </span>
+              </h2>
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
+              >
+                Coordinates: 30.2715185° N, 71.4948905° E · A Prime Commercial Address
+              </p>
+            </div>
+
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 5: 2.7 KM* DHA MULTAN (North Route Focus)                   */}
+            {/* Large numerical anchor, generous spacing, dedicated visual moment */}
+            {/* ----------------------------------------------------------------- */}
+            <div
+              ref={state5Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
+            >
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>STRATEGIC PROXIMITY</span>
+              </div>
+
+              {/* Large Numerical Visual Anchor */}
+              <div className="flex items-baseline gap-2">
                 <span
-                  className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light text-[#FAF9F6] tracking-tight leading-none"
-                  style={{ textShadow: '0 2px 28px rgba(0,0,0,0.95)' }}
+                  className="font-serif text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-light text-[#FAF9F6] tracking-tight leading-none"
+                  style={{
+                    filter: 'drop-shadow(0 2px 18px rgba(0,0,0,0.95))',
+                  }}
                 >
                   2.7
                 </span>
-                <span className="font-mono text-sm sm:text-base md:text-lg text-[#B59A6A] font-light">
+                <span className="font-mono text-lg sm:text-2xl text-[#B59A6A] font-light">
                   KM*
                 </span>
               </div>
-              <span
-                className="font-serif text-base sm:text-xl md:text-2xl text-[#D8D3CA] uppercase tracking-[0.1em] mt-1"
-                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
-              >
-                DHA Multan
-              </span>
-              <span className="font-mono text-[9px] text-[#8C8C87] tracking-[0.2em] uppercase mt-0.5">
-                NORTHERN ACCESS VIA BOSAN CORRIDOR
-              </span>
-            </div>
 
-            {/* Proximity 2: Multan International Airport (Bottom Left / Southwest) */}
-            <div
-              ref={distanceAirportRef}
-              className="absolute bottom-16 sm:bottom-24 left-6 sm:left-12 md:left-20 lg:left-24 text-left opacity-0 flex flex-col items-start will-change-[transform,opacity]"
-            >
-              <div className="flex items-baseline gap-1">
-                <span
-                  className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light text-[#FAF9F6] tracking-tight leading-none"
-                  style={{ textShadow: '0 2px 28px rgba(0,0,0,0.95)' }}
-                >
-                  11
-                </span>
-                <span className="font-mono text-sm sm:text-base md:text-lg text-[#B59A6A] font-light">
-                  KM*
-                </span>
-              </div>
               <span
-                className="font-serif text-base sm:text-xl md:text-2xl text-[#D8D3CA] uppercase tracking-[0.1em] mt-1"
-                style={{ textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
+                className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#FAF9F6] uppercase tracking-[0.08em] mt-3"
+                style={{
+                  filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.95))',
+                }}
               >
-                Multan International Airport
+                DHA MULTAN
               </span>
-              <span className="font-mono text-[9px] text-[#8C8C87] tracking-[0.2em] uppercase mt-0.5">
-                DIRECT ARTERIAL TRANSIT LINK
-              </span>
-            </div>
 
-            {/* Commercial Location Message (Bottom Center / Right) */}
-            <div
-              ref={commercialStatementRef}
-              className="absolute bottom-12 right-6 sm:right-16 md:right-24 text-right opacity-0 flex flex-col items-end will-change-[transform,opacity]"
-            >
-              <span
-                className="font-serif text-lg sm:text-2xl md:text-3xl text-[#FAF9F6] uppercase tracking-[0.08em]"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.95)' }}
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.18em] uppercase font-light mt-2 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
               >
-                IN THE HEART OF A GROWING ADDRESS.
-              </span>
-              <span className="font-mono text-[10px] sm:text-xs text-[#B59A6A] tracking-[0.25em] uppercase mt-1">
-                Main BZU Chowk • Bosan Road • Multan
-              </span>
-              <span className="font-mono text-[8px] sm:text-[9px] text-[#8C8C87]/75 tracking-widest mt-2">
+                Seamless northern access via the Bosan Road corridor.
+              </p>
+              <span className="font-mono text-[9px] text-[#8C8C87] tracking-widest mt-2 block">
                 *Approximate distance
               </span>
             </div>
+
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 6: 11 KM* MULTAN INTERNATIONAL AIRPORT (Southwest Route)    */}
+            {/* Large numerical anchor, generous spacing, dedicated visual moment */}
+            {/* ----------------------------------------------------------------- */}
+            <div
+              ref={state6Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
+            >
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>TRANSIT & CONNECTIVITY</span>
+              </div>
+
+              {/* Large Numerical Visual Anchor */}
+              <div className="flex items-baseline gap-2">
+                <span
+                  className="font-serif text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-light text-[#FAF9F6] tracking-tight leading-none"
+                  style={{
+                    filter: 'drop-shadow(0 2px 18px rgba(0,0,0,0.95))',
+                  }}
+                >
+                  11
+                </span>
+                <span className="font-mono text-lg sm:text-2xl text-[#B59A6A] font-light">
+                  KM*
+                </span>
+              </div>
+
+              <span
+                className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#FAF9F6] uppercase tracking-[0.08em] mt-3"
+                style={{
+                  filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.95))',
+                }}
+              >
+                MULTAN INTERNATIONAL AIRPORT
+              </span>
+
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.18em] uppercase font-light mt-2 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
+              >
+                Direct arterial transit corridor connecting to the regional flight hub.
+              </p>
+              <span className="font-mono text-[9px] text-[#8C8C87] tracking-widest mt-2 block">
+                *Approximate distance
+              </span>
+            </div>
+
+            {/* ----------------------------------------------------------------- */}
+            {/* STATE 7: AMEER HEIGHTS TOWER 10 (Building Transition)             */}
+            {/* Calm, confident, premium destination statement                     */}
+            {/* ----------------------------------------------------------------- */}
+            <div
+              ref={state7Ref}
+              className="absolute left-6 sm:left-12 md:left-16 lg:left-20 bottom-12 sm:bottom-16 md:bottom-20 max-w-xl md:max-w-2xl opacity-0 flex flex-col items-start select-none will-change-[transform,opacity]"
+            >
+              <div className="flex items-center gap-2.5 mb-3 font-mono text-[10px] sm:text-[11px] tracking-[0.3em] uppercase text-[#B59A6A]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#B59A6A]" />
+                <span>THE DESTINATION</span>
+              </div>
+              <h2
+                className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-[0.05em] text-[#FAF9F6] leading-[1.04] uppercase"
+                style={{
+                  filter: 'drop-shadow(0 2px 14px rgba(0,0,0,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.95))',
+                }}
+              >
+                AMEER HEIGHTS
+                <span className="block font-serif italic font-normal text-[#CBB488] tracking-[0.04em] mt-1">
+                  TOWER 10.
+                </span>
+              </h2>
+              <p
+                className="font-mono text-xs sm:text-sm text-[#D8D3CA] tracking-[0.20em] uppercase font-light mt-4 max-w-lg leading-relaxed"
+                style={{
+                  filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.95))',
+                }}
+              >
+                MAIN BZU CHOWK · BOSAN ROAD · MULTAN
+              </p>
+            </div>
           </div>
 
-          {/* ------------------------------------------------------------------- */}
-          {/* STAGE 4: CINEMATIC ARCHITECTURAL BUILDING REVEAL                    */}
-          {/* "CITY -> LOCATION -> ADDRESS -> BUILDING"                           */}
-          {/* ------------------------------------------------------------------- */}
+          {/* ======================================================================= */}
+          {/* ARCHITECTURAL BUILDING IMAGE REVEAL (State 7 Transition)                */}
+          {/* ======================================================================= */}
           <div
             ref={buildingRevealRef}
-            className="absolute inset-0 flex items-center justify-center z-25 opacity-0 pointer-events-none will-change-[transform,opacity]"
+            className="absolute inset-0 flex items-center justify-center z-15 opacity-0 pointer-events-none will-change-[transform,opacity]"
           >
-            {/* Architectural Building Visual Imagery */}
             <div className="relative w-full h-full max-w-5xl mx-auto flex items-center justify-center p-6 md:p-12">
               <div className="relative w-full max-w-3xl aspect-[16/10] sm:aspect-[16/9] overflow-hidden border border-[#B59A6A]/30 shadow-2xl bg-[#111315]">
                 <img
@@ -1028,28 +1134,6 @@ export const LocationSection: React.FC = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111315] via-transparent to-[#111315]/40 pointer-events-none" />
                 <div className="absolute inset-0 bg-radial-gradient from-transparent via-[#111315]/20 to-[#111315]/70 pointer-events-none" />
-              </div>
-
-              {/* Minimal floating building text */}
-              <div className="absolute bottom-12 sm:bottom-16 left-8 sm:left-16 md:left-24 text-left select-none">
-                <span className="font-mono text-[10px] sm:text-[11px] text-[#B59A6A] tracking-[0.3em] uppercase block mb-1">
-                  THE DESTINATION
-                </span>
-                <h3
-                  className="font-serif text-3xl sm:text-5xl md:text-6xl text-[#FAF9F6] uppercase tracking-[0.06em] leading-tight"
-                  style={{ textShadow: '0 2px 28px rgba(0,0,0,0.95)' }}
-                >
-                  AMEER HEIGHTS
-                  <span className="block font-serif italic text-[#CBB488] font-normal tracking-[0.04em]">
-                    TOWER 10
-                  </span>
-                </h3>
-                <p
-                  className="font-mono text-[10px] sm:text-xs text-[#D8D3CA] tracking-[0.25em] uppercase font-light mt-3"
-                  style={{ textShadow: '0 2px 16px rgba(0,0,0,0.9)' }}
-                >
-                  MAIN BZU CHOWK · BOSAN ROAD · MULTAN
-                </p>
               </div>
             </div>
           </div>
@@ -1075,8 +1159,6 @@ export const LocationSection: React.FC = () => {
 
       {/* ======================================================================= */}
       {/* PART 2: PRACTICAL MAP & GEOGRAPHIC PRECISION                            */}
-      {/* Interactive, visually quiet, allowing visitors to inspect coordinates   */}
-      {/* and get verified turn-by-turn directions                                */}
       {/* ======================================================================= */}
       <div className="relative z-30 bg-[#141719] py-24 md:py-32 px-6 md:px-16 border-t border-[#242526]">
         <div className="max-w-7xl mx-auto">
