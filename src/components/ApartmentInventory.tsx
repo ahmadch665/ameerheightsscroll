@@ -4,7 +4,7 @@ import { ApartmentUnit } from '../types';
 import { formatPKR } from '../utils/formatters';
 import { Filter, ArrowUpRight, Check } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
-import { ParallaxBackground } from './ParallaxBackground';
+import { InventoryBackground } from './backgrounds/InventoryBackground';
 
 interface ApartmentInventoryProps {
   selectedTypeFilter: string;
@@ -33,38 +33,8 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
       className="relative bg-[#F3F0E9] text-[#111315] py-28 md:py-36 px-6 md:px-16 overflow-hidden"
       aria-label="Ameer Heights Complete Apartment Inventory"
     >
-      {/* Refined Architectural Linework & Technical Drafting Atmosphere */}
-      <ParallaxBackground speed={0.035} maxOffset={16} className="absolute inset-0">
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Subtle Technical Drawing Grid: Thin Horizontal & Vertical Linework */}
-          <div className="w-full h-full max-w-7xl mx-auto border-x border-[#111315]/[0.035] grid grid-cols-6 md:grid-cols-12 opacity-80">
-            {Array.from({ length: 11 }).map((_, i) => (
-              <div key={i} className="border-r border-[#111315]/[0.025] h-full relative">
-                {/* Architectural Drafting Tick Marks */}
-                <span className="absolute top-1/4 -right-1 w-2 h-[1px] bg-[#B59A6A]/20" />
-                <span className="absolute top-3/4 -right-1 w-2 h-[1px] bg-[#B59A6A]/20" />
-              </div>
-            ))}
-          </div>
-
-          {/* Faint Horizontal Drafting Reference Lines */}
-          <div className="absolute inset-0 flex flex-col justify-around pointer-events-none opacity-[0.03]">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="w-full h-[1px] bg-[#111315]" />
-            ))}
-          </div>
-
-          {/* Subtle Perspective Coordinate Line */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
-            <line x1="0" y1="10%" x2="100%" y2="85%" stroke="#111315" strokeWidth="1" strokeDasharray="4 8" />
-            <line x1="100%" y1="15%" x2="0" y2="90%" stroke="#111315" strokeWidth="1" strokeDasharray="4 8" />
-          </svg>
-        </div>
-      </ParallaxBackground>
-
-      {/* Seamless Architectural Top & Bottom Edge Gradient Transitions */}
-      <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#181B1D]/[0.04] to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#111315]/[0.06] pointer-events-none" />
+      {/* Living Architectural Drafting & Construction Environment */}
+      <InventoryBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header: Heading LEFT -> CENTER, Controls BOTTOM -> CENTER */}

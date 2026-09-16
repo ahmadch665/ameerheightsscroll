@@ -34,6 +34,7 @@ export const EnquiryCTA: React.FC<EnquiryCTAProps> = ({ onOpenEnquiry }) => {
         <ScrollReveal as="div" direction="up" delay={0.24} className="pt-6 flex flex-wrap items-center justify-center gap-4">
           <button
             type="button"
+            data-magnetic="true"
             onClick={onOpenEnquiry}
             className="btn-luxury-hover px-8 py-4 text-xs font-medium tracking-[0.2em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] border border-[#F3F0E9] hover:border-[#B59A6A] flex items-center gap-2.5 shadow-2xl"
           >

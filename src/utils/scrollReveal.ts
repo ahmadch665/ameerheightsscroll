@@ -35,6 +35,25 @@ export interface ParallaxConfig {
   maxOffset?: number; // Max pixel translation clamp (default: 24)
 }
 
+export type SectionBackgroundCallback = (
+  progress: number,
+  centerOffset: number,
+  time: number,
+  isReducedMotion: boolean
+) => void;
+
+export interface SectionBackgroundItem {
+  id: string;
+  sectionElement: HTMLElement;
+  cachedTop: number;
+  cachedHeight: number;
+  targetProgress: number;
+  currentProgress: number;
+  targetCenterOffset: number;
+  currentCenterOffset: number;
+  onUpdate: SectionBackgroundCallback;
+}
+
 export interface ParallaxItem {
   id: string;
   element: HTMLElement;
@@ -70,6 +89,7 @@ function smoothstep(min: number, max: number, value: number): number {
 class ScrollRevealManager {
   private items = new Map<string, ScrollRevealItem>();
   private parallaxItems = new Map<string, ParallaxItem>();
+  private sectionBackgrounds = new Map<string, SectionBackgroundItem>();
   private isRunning = false;
   private animFrameId: number | null = null;
   private lastScrollY = -1;
@@ -145,6 +165,13 @@ class ScrollRevealManager {
       item.cachedHeight = rect.height;
     });
 
+    this.sectionBackgrounds.forEach((item) => {
+      if (!item.sectionElement || !item.sectionElement.isConnected) return;
+      const rect = item.sectionElement.getBoundingClientRect();
+      item.cachedTop = rect.top + scrollY;
+      item.cachedHeight = rect.height;
+    });
+
     this.updateAllTargets(scrollY);
   }
 
@@ -177,6 +204,20 @@ class ScrollRevealManager {
       const rawOffset = (viewportCenter - elemCenter) * item.speed;
       item.targetY = Math.max(-item.maxOffset, Math.min(item.maxOffset, rawOffset));
     });
+
+    this.sectionBackgrounds.forEach((item) => {
+      if (!item.sectionElement || !item.sectionElement.isConnected) return;
+      const totalDistance = item.cachedHeight + wh;
+      const travelDistance = scrollY + wh - item.cachedTop;
+      const rawProgress = Math.max(0, Math.min(1, travelDistance / totalDistance));
+
+      const viewportCenter = scrollY + wh * 0.5;
+      const elementCenter = item.cachedTop + item.cachedHeight * 0.5;
+      const centerOffset = Math.max(-1, Math.min(1, (viewportCenter - elementCenter) / (wh * 0.5 + item.cachedHeight * 0.5)));
+
+      item.targetProgress = rawProgress;
+      item.targetCenterOffset = centerOffset;
+    });
   }
 
   public registerParallax(
@@ -207,6 +248,45 @@ class ScrollRevealManager {
 
     return () => {
       this.parallaxItems.delete(id);
+    };
+  }
+
+  public registerSectionBackground(
+    id: string,
+    sectionElement: HTMLElement,
+    onUpdate: SectionBackgroundCallback
+  ): () => void {
+    const scrollY = typeof window !== 'undefined' ? window.scrollY || window.pageYOffset || 0 : 0;
+    const rect = sectionElement.getBoundingClientRect();
+
+    const item: SectionBackgroundItem = {
+      id,
+      sectionElement,
+      cachedTop: rect.top + scrollY,
+      cachedHeight: rect.height,
+      targetProgress: 0,
+      currentProgress: 0,
+      targetCenterOffset: 0,
+      currentCenterOffset: 0,
+      onUpdate,
+    };
+
+    this.sectionBackgrounds.set(id, item);
+    this.updateAllTargets(scrollY);
+
+    // Initial update call
+    item.currentProgress = item.targetProgress;
+    item.currentCenterOffset = item.targetCenterOffset;
+    try {
+      onUpdate(item.currentProgress, item.currentCenterOffset, 0, this.isReducedMotion);
+    } catch {
+      // safe fallback
+    }
+
+    this.startLoop();
+
+    return () => {
+      this.sectionBackgrounds.delete(id);
     };
   }
 
@@ -394,6 +474,44 @@ class ScrollRevealManager {
       } else if (item.currentY !== item.targetY) {
         item.currentY = item.targetY;
         item.element.style.transform = `translate3d(0, ${item.currentY.toFixed(2)}px, 0)`;
+      }
+    });
+
+    // Section Backgrounds continuous & scroll-driven updates
+    const nowSec = performance.now() * 0.001;
+    this.sectionBackgrounds.forEach((item) => {
+      // Check if section is active (within or near viewport)
+      const isActive = item.targetProgress > -0.05 && item.targetProgress < 1.05;
+
+      if (this.isReducedMotion) {
+        item.currentProgress = item.targetProgress;
+        item.currentCenterOffset = item.targetCenterOffset;
+        if (isActive) {
+          item.onUpdate(item.currentProgress, item.currentCenterOffset, 0, true);
+        }
+        return;
+      }
+
+      const deltaP = item.targetProgress - item.currentProgress;
+      const deltaO = item.targetCenterOffset - item.currentCenterOffset;
+
+      if (Math.abs(deltaP) > 0.0002 || Math.abs(deltaO) > 0.0002) {
+        hasActiveMotion = true;
+        item.currentProgress += deltaP * 0.14;
+        item.currentCenterOffset += deltaO * 0.14;
+      } else {
+        item.currentProgress = item.targetProgress;
+        item.currentCenterOffset = item.targetCenterOffset;
+      }
+
+      if (isActive) {
+        // While active on screen, keep loop alive for subtle ambient architectural breathing
+        hasActiveMotion = true;
+        try {
+          item.onUpdate(item.currentProgress, item.currentCenterOffset, nowSec, false);
+        } catch {
+          // safe fallback
+        }
       }
     });
 

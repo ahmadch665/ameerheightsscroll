@@ -2,6 +2,7 @@ import React from 'react';
 import { projectData } from '../data/projectData';
 import { CheckCircle2, ArrowUpRight } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { AmenitiesBackground } from './backgrounds/AmenitiesBackground';
 
 export const Amenities: React.FC = () => {
   return (
@@ -10,21 +11,8 @@ export const Amenities: React.FC = () => {
       className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526] overflow-hidden"
       aria-label="Ameer Heights Confirmed Features and Amenities"
     >
-      {/* Subtle Geometric Depth & Minimal Abstract Architectural Planes */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Faint Abstract Architectural Plane 1 */}
-        <div className="absolute top-12 left-10 w-96 h-96 border border-[#B59A6A]/[0.025] bg-[#181B1D]/20 animate-plane-float" />
-        
-        {/* Faint Abstract Architectural Plane 2 */}
-        <div className="absolute bottom-16 right-16 w-[32rem] h-80 border border-[#FAF9F6]/[0.02] bg-[#141618]/30 animate-plane-float [animation-delay:-12s]" />
-
-        {/* Soft Tonal Vignette & Shadow Gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,#111315_90%)]" />
-
-        {/* Seamless Transitions to and from Adjacent Sections */}
-        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#181B1D]/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#111315]" />
-      </div>
+      {/* Living 3-Layer Geometric Depth & Parallax Environment */}
+      <AmenitiesBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header: Heading RIGHT -> CENTER, Supporting text BOTTOM -> CENTER */}

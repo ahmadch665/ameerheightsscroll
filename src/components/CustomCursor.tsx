@@ -15,6 +15,7 @@ export const CustomCursor: React.FC = () => {
   const dotPos = useRef({ x: -100, y: -100 });
   const isVisible = useRef(false);
   const animFrameId = useRef<number | null>(null);
+  const lastMagneticElem = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // Enable only for desktop fine-pointer devices without reduced motion
@@ -47,6 +48,23 @@ export const CustomCursor: React.FC = () => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
+      // Optional subtle magnetic response for major CTAs only (max 3-4px movement)
+      const magneticElem = target.closest<HTMLElement>('[data-magnetic="true"]');
+      if (magneticElem) {
+        const rect = magneticElem.getBoundingClientRect();
+        const relX = e.clientX - (rect.left + rect.width / 2);
+        const relY = e.clientY - (rect.top + rect.height / 2);
+        const moveX = Math.max(-4, Math.min(4, relX * 0.12));
+        const moveY = Math.max(-4, Math.min(4, relY * 0.12));
+        magneticElem.style.transform = `translate3d(${moveX.toFixed(2)}px, ${moveY.toFixed(2)}px, 0)`;
+        magneticElem.style.transition = 'transform 0.12s ease-out';
+        lastMagneticElem.current = magneticElem;
+      } else if (lastMagneticElem.current) {
+        lastMagneticElem.current.style.transform = 'none';
+        lastMagneticElem.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        lastMagneticElem.current = null;
+      }
+
       const viewElem = target.closest('[data-cursor="view"], [data-cursor="explore"]');
       if (viewElem) {
         const text = viewElem.getAttribute('data-cursor-text') || 'VIEW';
@@ -75,6 +93,10 @@ export const CustomCursor: React.FC = () => {
 
     const handleMouseLeave = () => {
       isVisible.current = false;
+      if (lastMagneticElem.current) {
+        lastMagneticElem.current.style.transform = 'none';
+        lastMagneticElem.current = null;
+      }
       if (ringRef.current) ringRef.current.style.opacity = '0';
       if (dotRef.current) dotRef.current.style.opacity = '0';
     };
@@ -117,6 +139,9 @@ export const CustomCursor: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('mouseenter', handleMouseEnter);
+      if (lastMagneticElem.current) {
+        lastMagneticElem.current.style.transform = 'none';
+      }
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
     };
   }, []);
@@ -127,11 +152,11 @@ export const CustomCursor: React.FC = () => {
   const getRingClasses = () => {
     switch (cursorMode) {
       case 'view':
-        return 'w-16 h-16 bg-[#181B1D]/80 border border-[#B59A6A] backdrop-blur-[2px]';
+        return 'w-16 h-16 bg-[#181B1D]/85 border border-[#B59A6A] backdrop-blur-[2px]';
       case 'button':
-        return 'w-11 h-11 border border-[#B59A6A]/80 bg-[#B59A6A]/10';
+        return 'w-9 h-9 border border-[#B59A6A] bg-[#B59A6A]/15';
       case 'interactive':
-        return 'w-10 h-10 border border-[#B59A6A]/60 bg-[#B59A6A]/5';
+        return 'w-9 h-9 border border-[#B59A6A]/60 bg-[#B59A6A]/5';
       case 'normal':
       default:
         return 'w-7 h-7 border border-[#B59A6A]/40';
@@ -150,13 +175,18 @@ export const CustomCursor: React.FC = () => {
             {cursorText || 'VIEW'}
           </span>
         )}
+        {cursorMode === 'button' && (
+          <span className="font-mono text-xs text-[#B59A6A] select-none leading-none">
+            →
+          </span>
+        )}
       </div>
 
-      {/* Center Precise Dot */}
+      {/* Center Precise Dot (Hides when viewing or hovering button) */}
       <div
         ref={dotRef}
         className={`fixed top-0 left-0 w-1.5 h-1.5 rounded-full bg-[#B59A6A] opacity-0 transition-opacity duration-200 pointer-events-none ${
-          cursorMode === 'view' ? 'scale-0' : 'scale-100'
+          cursorMode === 'view' || cursorMode === 'button' ? 'scale-0' : 'scale-100'
         }`}
       />
     </div>

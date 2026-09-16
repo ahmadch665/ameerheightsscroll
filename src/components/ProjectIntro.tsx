@@ -2,6 +2,7 @@ import React from 'react';
 import { projectData } from '../data/projectData';
 import { Compass, Sparkles, ShieldCheck } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { OverviewBackground } from './backgrounds/OverviewBackground';
 
 export const ProjectIntro: React.FC = () => {
   return (
@@ -9,27 +10,8 @@ export const ProjectIntro: React.FC = () => {
       id="overview"
       className="relative bg-[#F3F0E9] text-[#111315] py-28 md:py-40 px-6 md:px-16 overflow-hidden transition-colors duration-700"
     >
-      {/* Sophisticated Architectural Ambient Light & Shadow Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft directional architectural light wash */}
-        <div className="absolute -top-1/4 -right-1/4 w-[140%] h-[150%] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#FAF9F6] via-[#EFECE5]/60 to-transparent opacity-60 animate-ambient-light" />
-        
-        {/* Very subtle architectural tonal depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF9F6]/40 via-transparent to-[#E8E4DB]/50" />
-
-        {/* Faint Architectural Grid Lines */}
-        <div className="w-full h-full border-x border-[#111315]/[0.035] max-w-7xl mx-auto grid grid-cols-6 md:grid-cols-12">
-          {Array.from({ length: 11 }).map((_, i) => (
-            <div key={i} className="border-r border-[#111315]/[0.025] h-full" />
-          ))}
-        </div>
-
-        {/* Seamless Architectural Top Transition from Hero */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#111315]/10 via-[#111315]/[0.03] to-transparent" />
-        
-        {/* Seamless Architectural Bottom Transition to Stats */}
-        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#111315]/[0.08]" />
-      </div>
+      {/* Living Architectural Background Environment */}
+      <OverviewBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header with Architectural Coordinate Marker */}

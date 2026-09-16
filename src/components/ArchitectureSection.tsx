@@ -2,7 +2,7 @@ import React from 'react';
 import { projectData } from '../data/projectData';
 import { ArrowUpRight } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
-import { ParallaxBackground } from './ParallaxBackground';
+import { ArchitectureBackground } from './backgrounds/ArchitectureBackground';
 
 export const ArchitectureSection: React.FC = () => {
   return (
@@ -11,32 +11,8 @@ export const ArchitectureSection: React.FC = () => {
       className="relative bg-[#181B1D] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 overflow-hidden"
       aria-label="Ameer Heights Architecture With Intention"
     >
-      {/* Clean Facade-Inspired Geometry with Scroll-Linked Parallax */}
-      <ParallaxBackground speed={0.04} maxOffset={20} className="absolute inset-0">
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Vertical Building Proportion Lines & Structural Grid */}
-          <div className="w-full h-full max-w-7xl mx-auto border-x border-[#FAF9F6]/[0.03] grid grid-cols-4 sm:grid-cols-8 md:grid-cols-12 opacity-90">
-            {Array.from({ length: 11 }).map((_, i) => (
-              <div key={i} className="border-r border-[#FAF9F6]/[0.02] h-full relative">
-                {/* Horizontal Story Heights Markers */}
-                <div className="absolute top-[25%] left-0 right-0 h-[1px] bg-[#B59A6A]/[0.04]" />
-                <div className="absolute top-[50%] left-0 right-0 h-[1px] bg-[#B59A6A]/[0.04]" />
-                <div className="absolute top-[75%] left-0 right-0 h-[1px] bg-[#B59A6A]/[0.04]" />
-              </div>
-            ))}
-          </div>
-
-          {/* Subtle Clean Perspective Elevation Lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-            <line x1="20%" y1="0" x2="80%" y2="100%" stroke="#B59A6A" strokeWidth="0.75" strokeDasharray="3 6" />
-            <line x1="80%" y1="0" x2="20%" y2="100%" stroke="#B59A6A" strokeWidth="0.75" strokeDasharray="3 6" />
-          </svg>
-        </div>
-      </ParallaxBackground>
-
-      {/* Seamless Section Transitions */}
-      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#111315]/40 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#111315]" pointer-events-none />
+      {/* Living Real-Time Architectural Elevation & Column Construction */}
+      <ArchitectureBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header: Heading LEFT -> CENTER, Supporting text BOTTOM -> CENTER */}

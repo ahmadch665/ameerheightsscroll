@@ -93,6 +93,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenEnquiry }) => {
             <button
               id="header-enquire-button"
               type="button"
+              data-magnetic="true"
               onClick={() => onOpenEnquiry()}
               className="btn-luxury-hover hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-xs font-medium tracking-[0.18em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] hover:text-[#111315] border border-[#F3F0E9] hover:border-[#B59A6A]"
             >

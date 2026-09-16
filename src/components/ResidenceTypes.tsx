@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Bed, Home, Maximize2 } from 'lucide-react';
 import { projectData } from '../data/projectData';
 import { ScrollReveal } from './ScrollReveal';
+import { ResidencesBackground } from './backgrounds/ResidencesBackground';
 
 interface ResidenceTypesProps {
   onSelectCategory: (type: string) => void;
@@ -15,21 +16,8 @@ export const ResidenceTypes: React.FC<ResidenceTypesProps> = ({ onSelectCategory
       className="relative bg-[#181B1D] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 overflow-hidden"
       aria-label="Ameer Heights Residence Typologies"
     >
-      {/* Warmer Residential Architectural Facade Light & Shadow Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Subtle vertical architectural timber slat/shadow structures */}
-        <div className="absolute inset-0 flex justify-between max-w-7xl mx-auto px-6 opacity-[0.035]">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="w-1.5 h-full bg-gradient-to-b from-transparent via-[#B59A6A] to-transparent" />
-          ))}
-        </div>
-
-        {/* Diagonal Soft Sunlight Drift across building facade */}
-        <div className="absolute -top-1/3 -left-1/4 w-[150%] h-[160%] bg-[linear-gradient(125deg,rgba(181,154,106,0.06)_0%,transparent_40%,rgba(181,154,106,0.03)_65%,transparent_100%)] animate-facade-sunlight" />
-
-        {/* Soft bottom gradient transition into Inventory (ivory) */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#F3F0E9]/[0.05]" />
-      </div>
+      {/* Living Residential Light & Shadow Environment */}
+      <ResidencesBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header: Main Heading RIGHT -> CENTER, Supporting text BOTTOM -> CENTER */}

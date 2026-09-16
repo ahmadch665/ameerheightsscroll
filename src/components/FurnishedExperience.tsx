@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sofa, BedDouble, Utensils, Lamp, CheckCircle2, Sparkles } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { FurnishedBackground } from './backgrounds/FurnishedBackground';
 
 export const FurnishedExperience: React.FC = () => {
   const furnishingCategories = [
@@ -32,22 +33,8 @@ export const FurnishedExperience: React.FC = () => {
       className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526] overflow-hidden"
       aria-label="Fully Furnished and Architect Designed Residences"
     >
-      {/* Softer Lifestyle Atmospheric Background (Light Through Apartment Window) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft Warm/Cool Tonal Shift & Window Light Aperture */}
-        <div className="absolute -top-1/4 -right-1/4 w-[130%] h-[140%] bg-[radial-gradient(ellipse_at_center,_rgba(181,154,106,0.06)_0%,rgba(36,37,38,0.3)_45%,transparent_75%)] animate-lifestyle-wash" />
-        
-        {/* Faint Architectural Window Mullion Shadow Lines */}
-        <div className="absolute inset-0 opacity-[0.025] flex justify-around">
-          <div className="w-[1px] h-full bg-[#FAF9F6]" />
-          <div className="w-[1px] h-full bg-[#FAF9F6]" />
-          <div className="w-[1px] h-full bg-[#FAF9F6]" />
-        </div>
-
-        {/* Soft gradient transitions between sections */}
-        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#111315] to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#181B1D]/40" />
-      </div>
+      {/* Living Interior Light & Translucent Plane Environment */}
+      <FurnishedBackground />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header: Main Heading RIGHT -> CENTER, Supporting text BOTTOM -> CENTER */}
