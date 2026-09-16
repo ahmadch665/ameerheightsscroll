@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { Preloader } from './components/Preloader';
+import { CustomCursor } from './components/CustomCursor';
 import { Header } from './components/Header';
 import { HeroConstruction } from './components/HeroConstruction';
 import { ProjectIntro } from './components/ProjectIntro';
@@ -60,6 +61,9 @@ export default function App() {
     <div className="min-h-screen bg-[#111315] text-[#F3F0E9] selection:bg-[#B59A6A] selection:text-[#111315] antialiased">
       {/* 1-Second Architectural Preloader */}
       <Preloader />
+
+      {/* Desktop Architectural Custom Cursor */}
+      <CustomCursor />
 
       {/* Primary Fixed Luxury Navigation */}
       <Header onOpenEnquiry={() => handleOpenEnquiry()} />

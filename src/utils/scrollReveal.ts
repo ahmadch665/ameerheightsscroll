@@ -30,6 +30,22 @@ export interface ScrollRevealConfig {
   triggerSettleFactor?: number; // Viewport fraction where entrance settles (default: 0.68)
 }
 
+export interface ParallaxConfig {
+  speed?: number; // e.g. -0.04 (moves slightly slower or faster than scroll)
+  maxOffset?: number; // Max pixel translation clamp (default: 24)
+}
+
+export interface ParallaxItem {
+  id: string;
+  element: HTMLElement;
+  speed: number;
+  maxOffset: number;
+  cachedTop: number;
+  cachedHeight: number;
+  targetY: number;
+  currentY: number;
+}
+
 export interface ScrollRevealItem {
   id: string;
   element: HTMLElement;
@@ -53,6 +69,7 @@ function smoothstep(min: number, max: number, value: number): number {
 
 class ScrollRevealManager {
   private items = new Map<string, ScrollRevealItem>();
+  private parallaxItems = new Map<string, ParallaxItem>();
   private isRunning = false;
   private animFrameId: number | null = null;
   private lastScrollY = -1;
@@ -121,6 +138,13 @@ class ScrollRevealManager {
       item.cachedHeight = rect.height;
     });
 
+    this.parallaxItems.forEach((item) => {
+      if (!item.element || !item.element.isConnected) return;
+      const rect = item.element.getBoundingClientRect();
+      item.cachedTop = rect.top + scrollY - item.currentY;
+      item.cachedHeight = rect.height;
+    });
+
     this.updateAllTargets(scrollY);
   }
 
@@ -146,6 +170,44 @@ class ScrollRevealManager {
 
       item.targetProgress = target;
     });
+
+    this.parallaxItems.forEach((item) => {
+      const viewportCenter = scrollY + wh * 0.5;
+      const elemCenter = item.cachedTop + item.cachedHeight * 0.5;
+      const rawOffset = (viewportCenter - elemCenter) * item.speed;
+      item.targetY = Math.max(-item.maxOffset, Math.min(item.maxOffset, rawOffset));
+    });
+  }
+
+  public registerParallax(
+    id: string,
+    element: HTMLElement,
+    config: ParallaxConfig = {}
+  ): () => void {
+    const scrollY = typeof window !== 'undefined' ? window.scrollY || window.pageYOffset || 0 : 0;
+    const rect = element.getBoundingClientRect();
+
+    const speed = config.speed ?? 0.04;
+    const maxOffset = config.maxOffset ?? 20;
+
+    const item: ParallaxItem = {
+      id,
+      element,
+      speed,
+      maxOffset,
+      cachedTop: rect.top + scrollY,
+      cachedHeight: rect.height,
+      targetY: 0,
+      currentY: 0,
+    };
+
+    this.parallaxItems.set(id, item);
+    this.updateAllTargets(scrollY);
+    this.startLoop();
+
+    return () => {
+      this.parallaxItems.delete(id);
+    };
   }
 
   public register(
@@ -312,6 +374,26 @@ class ScrollRevealManager {
         item.element.style.transform = `translate3d(${panX.toFixed(2)}px, ${panY.toFixed(2)}px, 0)`;
         item.element.style.willChange = 'transform, opacity';
         item.element.style.pointerEvents = p > 0.35 ? 'auto' : 'none';
+      }
+    });
+
+    // Parallax background items interpolation
+    this.parallaxItems.forEach((item) => {
+      if (this.isReducedMotion) {
+        if (item.element.style.transform !== 'none') {
+          item.element.style.transform = 'none';
+        }
+        return;
+      }
+
+      const delta = item.targetY - item.currentY;
+      if (Math.abs(delta) > 0.04) {
+        hasActiveMotion = true;
+        item.currentY += delta * 0.12;
+        item.element.style.transform = `translate3d(0, ${item.currentY.toFixed(2)}px, 0)`;
+      } else if (item.currentY !== item.targetY) {
+        item.currentY = item.targetY;
+        item.element.style.transform = `translate3d(0, ${item.currentY.toFixed(2)}px, 0)`;
       }
     });
 

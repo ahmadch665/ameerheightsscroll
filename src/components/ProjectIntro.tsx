@@ -9,9 +9,26 @@ export const ProjectIntro: React.FC = () => {
       id="overview"
       className="relative bg-[#F3F0E9] text-[#111315] py-28 md:py-40 px-6 md:px-16 overflow-hidden transition-colors duration-700"
     >
-      {/* Subtle Architectural Background Grid & Ruler lines */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04]">
-        <div className="w-full h-full border-x border-[#111315] max-w-7xl mx-auto grid grid-cols-6 md:grid-cols-12" />
+      {/* Sophisticated Architectural Ambient Light & Shadow Atmosphere */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Soft directional architectural light wash */}
+        <div className="absolute -top-1/4 -right-1/4 w-[140%] h-[150%] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#FAF9F6] via-[#EFECE5]/60 to-transparent opacity-60 animate-ambient-light" />
+        
+        {/* Very subtle architectural tonal depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF9F6]/40 via-transparent to-[#E8E4DB]/50" />
+
+        {/* Faint Architectural Grid Lines */}
+        <div className="w-full h-full border-x border-[#111315]/[0.035] max-w-7xl mx-auto grid grid-cols-6 md:grid-cols-12">
+          {Array.from({ length: 11 }).map((_, i) => (
+            <div key={i} className="border-r border-[#111315]/[0.025] h-full" />
+          ))}
+        </div>
+
+        {/* Seamless Architectural Top Transition from Hero */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#111315]/10 via-[#111315]/[0.03] to-transparent" />
+        
+        {/* Seamless Architectural Bottom Transition to Stats */}
+        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-b from-transparent to-[#111315]/[0.08]" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -23,14 +40,14 @@ export const ProjectIntro: React.FC = () => {
             </span>
             <span className="w-8 h-[1px] bg-[#B59A6A]" />
           </ScrollReveal>
-          <ScrollReveal as="p" direction="right" delay={0.06} className="font-mono text-[11px] text-[#8C8C87] tracking-[0.2em] uppercase">
+          <ScrollReveal as="p" direction="up" delay={0.06} className="font-mono text-[11px] text-[#8C8C87] tracking-[0.2em] uppercase">
             Multan · Punjab · Pakistan
           </ScrollReveal>
         </div>
 
         {/* Editorial Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          {/* Main Statement */}
+          {/* Main Statement: LEFT -> CENTER */}
           <div className="lg:col-span-7 space-y-6">
             <ScrollReveal as="h2" direction="left" delay={0.04} className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal leading-[1.08] tracking-[0.02em] uppercase text-[#111315]">
               Designed For <br />
@@ -39,9 +56,9 @@ export const ProjectIntro: React.FC = () => {
             <ScrollReveal as="div" direction="left" delay={0.12} className="w-20 h-[2px] bg-[#B59A6A]" />
           </div>
 
-          {/* Narrative & Inclusions */}
+          {/* Narrative & Inclusions: BOTTOM -> CENTER */}
           <div className="lg:col-span-5 space-y-8">
-            <ScrollReveal as="p" direction="right" delay={0.08} className="font-sans text-lg md:text-xl font-light leading-relaxed text-[#242526]">
+            <ScrollReveal as="p" direction="up" delay={0.08} className="font-sans text-lg md:text-xl font-light leading-relaxed text-[#242526]">
               A thoughtfully designed collection of 30 fully furnished residences at Main BZU Chowk, Multan — combining contemporary architecture, refined interiors and everyday convenience in one distinctive address.
             </ScrollReveal>
 

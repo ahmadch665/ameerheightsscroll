@@ -35,7 +35,7 @@ export const EnquiryCTA: React.FC<EnquiryCTAProps> = ({ onOpenEnquiry }) => {
           <button
             type="button"
             onClick={onOpenEnquiry}
-            className="px-8 py-4 text-xs font-medium tracking-[0.2em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] transition-all duration-300 border border-[#F3F0E9] hover:border-[#B59A6A] flex items-center gap-2.5 shadow-2xl"
+            className="btn-luxury-hover px-8 py-4 text-xs font-medium tracking-[0.2em] uppercase text-[#111315] bg-[#F3F0E9] hover:bg-[#B59A6A] border border-[#F3F0E9] hover:border-[#B59A6A] flex items-center gap-2.5 shadow-2xl"
           >
             <span>Enquire Now</span>
             <ArrowUpRight className="w-4 h-4" />
@@ -43,7 +43,7 @@ export const EnquiryCTA: React.FC<EnquiryCTAProps> = ({ onOpenEnquiry }) => {
 
           <a
             href="#inventory"
-            className="px-8 py-4 text-xs font-medium tracking-[0.2em] uppercase text-[#FAF9F6] bg-[#181B1D] hover:bg-[#242526] border border-[#242526] hover:border-[#B59A6A]/50 transition-all duration-300"
+            className="btn-luxury-hover px-8 py-4 text-xs font-medium tracking-[0.2em] uppercase text-[#FAF9F6] bg-[#181B1D] hover:bg-[#242526] border border-[#242526] hover:border-[#B59A6A]/50 transition-colors"
           >
             <span>View Residences</span>
           </a>

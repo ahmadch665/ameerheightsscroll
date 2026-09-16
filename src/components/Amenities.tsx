@@ -7,13 +7,29 @@ export const Amenities: React.FC = () => {
   return (
     <section
       id="amenities"
-      className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526]"
+      className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526] overflow-hidden"
       aria-label="Ameer Heights Confirmed Features and Amenities"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Section Header */}
+      {/* Subtle Geometric Depth & Minimal Abstract Architectural Planes */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Faint Abstract Architectural Plane 1 */}
+        <div className="absolute top-12 left-10 w-96 h-96 border border-[#B59A6A]/[0.025] bg-[#181B1D]/20 animate-plane-float" />
+        
+        {/* Faint Abstract Architectural Plane 2 */}
+        <div className="absolute bottom-16 right-16 w-[32rem] h-80 border border-[#FAF9F6]/[0.02] bg-[#141618]/30 animate-plane-float [animation-delay:-12s]" />
+
+        {/* Soft Tonal Vignette & Shadow Gradients */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,#111315_90%)]" />
+
+        {/* Seamless Transitions to and from Adjacent Sections */}
+        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#181B1D]/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#111315]" />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Section Header: Heading RIGHT -> CENTER, Supporting text BOTTOM -> CENTER */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <ScrollReveal as="div" direction="left" delay={0.00}>
+          <ScrollReveal as="div" direction="right" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 07 / VERIFIED PROJECT AMENITIES
@@ -24,7 +40,7 @@ export const Amenities: React.FC = () => {
               Core Project Features
             </h2>
           </ScrollReveal>
-          <ScrollReveal as="p" direction="right" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          <ScrollReveal as="p" direction="up" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
             Confirmed Structural & Residential Specifications
           </ScrollReveal>
         </div>
@@ -37,19 +53,23 @@ export const Amenities: React.FC = () => {
               key={amenity.id}
               direction="up"
               delay={(idx % 3) * 0.08}
-              className="p-8 bg-[#181B1D] border border-[#242526] hover:border-[#B59A6A]/50 transition-colors flex flex-col justify-between"
+              className="group p-8 bg-[#181B1D] border border-[#242526] hover:border-[#B59A6A]/50 transition-colors duration-300 flex flex-col justify-between cursor-default"
             >
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-[#242526]">
                   <span className="font-mono text-[10px] text-[#B59A6A] uppercase tracking-[0.2em]">
                     {amenity.category}
                   </span>
-                  <span className="font-mono text-xs text-[#8C8C87]">
-                    0{idx + 1}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-[#8C8C87]">
+                      0{idx + 1}
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-[#8C8C87] group-hover:text-[#B59A6A] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                  </div>
                 </div>
 
-                <h3 className="font-serif text-xl text-[#FAF9F6] uppercase tracking-wider mt-6 mb-3">
+                {/* Title with Subtle 4px Glide on Hover */}
+                <h3 className="font-serif text-xl text-[#FAF9F6] uppercase tracking-wider mt-6 mb-3 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[#B59A6A]">
                   {amenity.title}
                 </h3>
                 <p className="text-xs text-[#8C8C87] leading-relaxed">

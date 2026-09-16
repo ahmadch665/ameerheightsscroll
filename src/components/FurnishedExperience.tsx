@@ -29,13 +29,30 @@ export const FurnishedExperience: React.FC = () => {
   return (
     <section
       id="furnished"
-      className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526]"
+      className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526] overflow-hidden"
       aria-label="Fully Furnished and Architect Designed Residences"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Section Header */}
+      {/* Softer Lifestyle Atmospheric Background (Light Through Apartment Window) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Soft Warm/Cool Tonal Shift & Window Light Aperture */}
+        <div className="absolute -top-1/4 -right-1/4 w-[130%] h-[140%] bg-[radial-gradient(ellipse_at_center,_rgba(181,154,106,0.06)_0%,rgba(36,37,38,0.3)_45%,transparent_75%)] animate-lifestyle-wash" />
+        
+        {/* Faint Architectural Window Mullion Shadow Lines */}
+        <div className="absolute inset-0 opacity-[0.025] flex justify-around">
+          <div className="w-[1px] h-full bg-[#FAF9F6]" />
+          <div className="w-[1px] h-full bg-[#FAF9F6]" />
+          <div className="w-[1px] h-full bg-[#FAF9F6]" />
+        </div>
+
+        {/* Soft gradient transitions between sections */}
+        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#111315] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#181B1D]/40" />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Section Header: Main Heading RIGHT -> CENTER, Supporting text BOTTOM -> CENTER */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <ScrollReveal as="div" direction="left" delay={0.00}>
+          <ScrollReveal as="div" direction="right" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 05 / INTERIOR CURATION
@@ -47,16 +64,16 @@ export const FurnishedExperience: React.FC = () => {
               <span className="italic text-[#B59A6A]">Architect Designed.</span>
             </h2>
           </ScrollReveal>
-          <ScrollReveal as="p" direction="right" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          <ScrollReveal as="p" direction="up" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
             Ready For Modern Living · Furniture, Accessories & Interior Elements Included
           </ScrollReveal>
         </div>
 
         {/* Editorial Layout: Statement + Architectural Grid Treatment */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Left: Editorial Focus */}
+          {/* Left: Editorial Focus - BOTTOM -> CENTER */}
           <div className="lg:col-span-6 space-y-8">
-            <ScrollReveal as="div" direction="left" delay={0.06} className="p-8 md:p-10 bg-[#181B1D] border border-[#242526] relative">
+            <ScrollReveal as="div" direction="up" delay={0.06} className="p-8 md:p-10 bg-[#181B1D] border border-[#242526] relative">
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#B59A6A] block mb-3">
                 Core Philosophy
               </span>
@@ -73,8 +90,8 @@ export const FurnishedExperience: React.FC = () => {
               </div>
             </ScrollReveal>
 
-            {/* Architectural Abstract Visual Treatment (No fake stock photos) */}
-            <ScrollReveal as="div" direction="left" delay={0.14} className="p-8 border border-[#242526] bg-[#111315] space-y-4">
+            {/* Architectural Material Specification */}
+            <ScrollReveal as="div" direction="up" delay={0.12} className="p-8 border border-[#242526] bg-[#111315] space-y-4">
               <div className="flex items-center justify-between font-mono text-[11px] text-[#8C8C87] border-b border-[#242526] pb-3">
                 <span>INTERIOR MATERIAL SPECIFICATION</span>
                 <span className="text-[#B59A6A]">AH-INT-STD</span>
@@ -96,7 +113,7 @@ export const FurnishedExperience: React.FC = () => {
             </ScrollReveal>
           </div>
 
-          {/* Right: Detailed Inclusions Grid */}
+          {/* Right: Detailed Inclusions Grid - Staggered BOTTOM -> CENTER */}
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {furnishingCategories.map((item, idx) => {
               const Icon = item.icon;
@@ -104,7 +121,7 @@ export const FurnishedExperience: React.FC = () => {
                 <ScrollReveal
                   as="div"
                   key={item.title}
-                  direction="right"
+                  direction="up"
                   delay={idx * 0.08}
                   className="p-8 bg-[#181B1D] border border-[#242526] hover:border-[#B59A6A]/60 transition-colors group flex flex-col justify-between"
                 >

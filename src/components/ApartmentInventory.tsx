@@ -4,6 +4,7 @@ import { ApartmentUnit } from '../types';
 import { formatPKR } from '../utils/formatters';
 import { Filter, ArrowUpRight, Check } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { ParallaxBackground } from './ParallaxBackground';
 
 interface ApartmentInventoryProps {
   selectedTypeFilter: string;
@@ -29,11 +30,44 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
   return (
     <section
       id="inventory"
-      className="relative bg-[#F3F0E9] text-[#111315] py-28 md:py-36 px-6 md:px-16"
+      className="relative bg-[#F3F0E9] text-[#111315] py-28 md:py-36 px-6 md:px-16 overflow-hidden"
       aria-label="Ameer Heights Complete Apartment Inventory"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Section Header */}
+      {/* Refined Architectural Linework & Technical Drafting Atmosphere */}
+      <ParallaxBackground speed={0.035} maxOffset={16} className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Subtle Technical Drawing Grid: Thin Horizontal & Vertical Linework */}
+          <div className="w-full h-full max-w-7xl mx-auto border-x border-[#111315]/[0.035] grid grid-cols-6 md:grid-cols-12 opacity-80">
+            {Array.from({ length: 11 }).map((_, i) => (
+              <div key={i} className="border-r border-[#111315]/[0.025] h-full relative">
+                {/* Architectural Drafting Tick Marks */}
+                <span className="absolute top-1/4 -right-1 w-2 h-[1px] bg-[#B59A6A]/20" />
+                <span className="absolute top-3/4 -right-1 w-2 h-[1px] bg-[#B59A6A]/20" />
+              </div>
+            ))}
+          </div>
+
+          {/* Faint Horizontal Drafting Reference Lines */}
+          <div className="absolute inset-0 flex flex-col justify-around pointer-events-none opacity-[0.03]">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="w-full h-[1px] bg-[#111315]" />
+            ))}
+          </div>
+
+          {/* Subtle Perspective Coordinate Line */}
+          <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="10%" x2="100%" y2="85%" stroke="#111315" strokeWidth="1" strokeDasharray="4 8" />
+            <line x1="100%" y1="15%" x2="0" y2="90%" stroke="#111315" strokeWidth="1" strokeDasharray="4 8" />
+          </svg>
+        </div>
+      </ParallaxBackground>
+
+      {/* Seamless Architectural Top & Bottom Edge Gradient Transitions */}
+      <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[#181B1D]/[0.04] to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#111315]/[0.06] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Section Header: Heading LEFT -> CENTER, Controls BOTTOM -> CENTER */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[#D8D3CA] pb-8 mb-12 gap-6">
           <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
@@ -50,15 +84,15 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
             </p>
           </ScrollReveal>
 
-          {/* Controls: Filter & View Toggle */}
-          <ScrollReveal as="div" direction="right" delay={0.08} className="flex flex-wrap items-center gap-4">
+          {/* Controls: Filter & View Toggle - BOTTOM -> CENTER */}
+          <ScrollReveal as="div" direction="up" delay={0.08} className="flex flex-wrap items-center gap-4">
             <div className="flex items-center bg-[#FAF9F6] border border-[#D8D3CA] p-1">
               {filterOptions.map((opt) => (
                 <button
                   key={opt}
                   type="button"
                   onClick={() => onFilterChange(opt)}
-                  className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
+                  className={`btn-luxury-hover px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors ${
                     selectedTypeFilter === opt
                       ? 'bg-[#111315] text-[#FAF9F6]'
                       : 'text-[#8C8C87] hover:text-[#111315]'
@@ -73,7 +107,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-3 py-1.5 uppercase tracking-wider transition-colors ${
+                className={`btn-luxury-hover px-3 py-1.5 uppercase tracking-wider transition-colors ${
                   viewMode === 'cards' ? 'bg-[#111315] text-[#FAF9F6]' : 'text-[#8C8C87] hover:text-[#111315]'
                 }`}
               >
@@ -82,7 +116,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
-                className={`px-3 py-1.5 uppercase tracking-wider transition-colors ${
+                className={`btn-luxury-hover px-3 py-1.5 uppercase tracking-wider transition-colors ${
                   viewMode === 'table' ? 'bg-[#111315] text-[#FAF9F6]' : 'text-[#8C8C87] hover:text-[#111315]'
                 }`}
               >
@@ -92,8 +126,8 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
           </ScrollReveal>
         </div>
 
-        {/* Sub-label count */}
-        <ScrollReveal as="div" direction="fade" delay={0.12} className="flex items-center justify-between text-xs font-mono text-[#8C8C87] mb-8 pb-3 border-b border-[#D8D3CA]/60">
+        {/* Sub-label count: BOTTOM -> CENTER */}
+        <ScrollReveal as="div" direction="up" delay={0.10} className="flex items-center justify-between text-xs font-mono text-[#8C8C87] mb-8 pb-3 border-b border-[#D8D3CA]/60">
           <span>SHOWING {filteredApartments.length} CONFIGURATIONS ({totalFilteredUnits} RESIDENCES)</span>
           <span className="hidden md:inline">* Indicative pricing calculated at PKR 15,000/sq ft subject to confirmation</span>
         </ScrollReveal>
@@ -108,6 +142,8 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                 direction="up"
                 delay={(idx % 6) * 0.05}
                 className="group bg-[#FAF9F6] border border-[#D8D3CA] hover:border-[#B59A6A] transition-all duration-300 p-7 flex flex-col justify-between"
+                data-cursor="view"
+                data-cursor-text="DETAILS"
               >
                 <div>
                   <div className="flex items-center justify-between pb-4 border-b border-[#D8D3CA]">
@@ -153,7 +189,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                   <button
                     type="button"
                     onClick={() => onSelectUnit(apt)}
-                    className="w-full py-2.5 text-xs font-mono uppercase tracking-[0.16em] text-[#111315] bg-[#F3F0E9] group-hover:bg-[#111315] group-hover:text-[#FAF9F6] border border-[#D8D3CA] group-hover:border-[#111315] transition-all duration-300 flex items-center justify-center gap-2"
+                    className="btn-luxury-hover w-full py-2.5 text-xs font-mono uppercase tracking-[0.16em] text-[#111315] bg-[#F3F0E9] group-hover:bg-[#111315] group-hover:text-[#FAF9F6] border border-[#D8D3CA] group-hover:border-[#111315] transition-all duration-300 flex items-center justify-center gap-2"
                   >
                     <span>Request Details</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -198,7 +234,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectUnit(apt)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider bg-[#111315] text-[#FAF9F6] hover:bg-[#B59A6A] hover:text-[#111315] transition-colors"
+                        className="btn-luxury-hover inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider bg-[#111315] text-[#FAF9F6] hover:bg-[#B59A6A] hover:text-[#111315] transition-colors"
                       >
                         <span>Enquire</span>
                         <ArrowUpRight className="w-3 h-3" />
@@ -212,7 +248,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
         )}
 
         {/* Footnote on pricing */}
-        <ScrollReveal as="p" direction="fade" delay={0.16} className="mt-8 text-xs font-mono text-[#8C8C87] text-center">
+        <ScrollReveal as="p" direction="up" delay={0.14} className="mt-8 text-xs font-mono text-[#8C8C87] text-center">
           Pricing represents indicative calculations based on PKR 15,000 per sq ft. All apartments are delivered fully furnished with complete interior elements.
         </ScrollReveal>
       </div>

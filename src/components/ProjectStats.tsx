@@ -36,10 +36,20 @@ export const ProjectStats: React.FC = () => {
   return (
     <section
       id="stats"
-      className="relative bg-[#111315] text-[#FAF9F6] py-24 md:py-32 px-6 md:px-16 border-y border-[#242526]"
-      aria-label="Ameer Heights Key Project Statistics"
+      className="relative bg-[#111315] text-[#FAF9F6] py-24 md:py-32 px-6 md:px-16 border-y border-[#242526] overflow-hidden"
+      aria-label="Ameer Heights Key Project Specifications"
     >
-      <div className="max-w-7xl mx-auto">
+      {/* Subtle Architectural Atmosphere & Gradient Transitions */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Soft top gradient transition from Overview */}
+        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#111315] to-transparent" />
+        {/* Soft low-contrast ambient tonal movement */}
+        <div className="absolute -top-1/2 left-1/4 w-[80%] h-[120%] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#181B1D] via-[#111315] to-transparent opacity-50 animate-ambient-light" />
+        {/* Soft bottom gradient transition to Residences */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-[#181B1D]/40" />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Subtle Section Tag */}
         <ScrollReveal as="div" direction="left" delay={0.00} className="flex items-center gap-3 mb-16">
           <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
