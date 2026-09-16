@@ -3,6 +3,7 @@ import { projectData } from '../data/projectData';
 import { ApartmentUnit } from '../types';
 import { formatPKR } from '../utils/formatters';
 import { Filter, ArrowUpRight, Check } from 'lucide-react';
+import { ScrollReveal } from './ScrollReveal';
 
 interface ApartmentInventoryProps {
   selectedTypeFilter: string;
@@ -34,7 +35,7 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[#D8D3CA] pb-8 mb-12 gap-6">
-          <div>
+          <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 04 / COMPLETE INVENTORY
@@ -47,10 +48,10 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
             <p className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] mt-2">
               Fixed Selling Rate: PKR 15,000 / SQ FT · 30 Fully Furnished Units Total
             </p>
-          </div>
+          </ScrollReveal>
 
           {/* Controls: Filter & View Toggle */}
-          <div className="flex flex-wrap items-center gap-4">
+          <ScrollReveal as="div" direction="right" delay={0.08} className="flex flex-wrap items-center gap-4">
             <div className="flex items-center bg-[#FAF9F6] border border-[#D8D3CA] p-1">
               {filterOptions.map((opt) => (
                 <button
@@ -88,21 +89,24 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                 Table
               </button>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* Sub-label count */}
-        <div className="flex items-center justify-between text-xs font-mono text-[#8C8C87] mb-8 pb-3 border-b border-[#D8D3CA]/60">
+        <ScrollReveal as="div" direction="fade" delay={0.12} className="flex items-center justify-between text-xs font-mono text-[#8C8C87] mb-8 pb-3 border-b border-[#D8D3CA]/60">
           <span>SHOWING {filteredApartments.length} CONFIGURATIONS ({totalFilteredUnits} RESIDENCES)</span>
           <span className="hidden md:inline">* Indicative pricing calculated at PKR 15,000/sq ft subject to confirmation</span>
-        </div>
+        </ScrollReveal>
 
         {/* CARDS VIEW */}
         {viewMode === 'cards' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredApartments.map((apt) => (
-              <div
+            {filteredApartments.map((apt, idx) => (
+              <ScrollReveal
+                as="div"
                 key={apt.id}
+                direction="up"
+                delay={(idx % 6) * 0.05}
                 className="group bg-[#FAF9F6] border border-[#D8D3CA] hover:border-[#B59A6A] transition-all duration-300 p-7 flex flex-col justify-between"
               >
                 <div>
@@ -155,12 +159,12 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         ) : (
           /* TABLE VIEW */
-          <div className="overflow-x-auto bg-[#FAF9F6] border border-[#D8D3CA]">
+          <ScrollReveal as="div" direction="up" delay={0.06} className="overflow-x-auto bg-[#FAF9F6] border border-[#D8D3CA]">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#D8D3CA] bg-[#F3F0E9] font-mono text-[11px] text-[#8C8C87] uppercase tracking-[0.16em]">
@@ -204,13 +208,13 @@ export const ApartmentInventory: React.FC<ApartmentInventoryProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollReveal>
         )}
 
         {/* Footnote on pricing */}
-        <p className="mt-8 text-xs font-mono text-[#8C8C87] text-center">
+        <ScrollReveal as="p" direction="fade" delay={0.16} className="mt-8 text-xs font-mono text-[#8C8C87] text-center">
           Pricing represents indicative calculations based on PKR 15,000 per sq ft. All apartments are delivered fully furnished with complete interior elements.
-        </p>
+        </ScrollReveal>
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { projectData } from '../data/projectData';
 import { ArrowUpRight } from 'lucide-react';
+import { ScrollReveal } from './ScrollReveal';
 
 export const ArchitectureSection: React.FC = () => {
   return (
@@ -12,7 +13,7 @@ export const ArchitectureSection: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <div>
+          <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 06 / ARCHITECTURAL PHILOSOPHY
@@ -23,16 +24,16 @@ export const ArchitectureSection: React.FC = () => {
               Architecture <br />
               <span className="italic text-[#B59A6A]">With Intention.</span>
             </h2>
-          </div>
-          <p className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          </ScrollReveal>
+          <ScrollReveal as="p" direction="right" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
             Monolithic Proportion · Refined Materiality · Urban Form
-          </p>
+          </ScrollReveal>
         </div>
 
         {/* 2-Column Editorial Layout with Actual Facade Image */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Visual: Real Building Facade Rendered from Video Asset */}
-          <div className="lg:col-span-6 relative group">
+          <ScrollReveal as="div" direction="fade" delay={0.04} className="lg:col-span-6 relative group">
             <div className="relative overflow-hidden border border-[#242526] group-hover:border-[#B59A6A]/50 transition-colors duration-500 bg-[#111315]">
               <img
                 src="/assets/stage_4_facade.jpg"
@@ -46,21 +47,21 @@ export const ArchitectureSection: React.FC = () => {
                 <span className="text-[#B59A6A]">PRIMARY FACADE ELEVATION</span>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Text & Principles */}
           <div className="lg:col-span-6 space-y-8">
-            <div className="space-y-4">
+            <ScrollReveal as="div" direction="right" delay={0.06} className="space-y-4">
               <span className="font-mono text-xs text-[#B59A6A] tracking-[0.2em] uppercase">
                 The Facade & Form
               </span>
               <p className="font-sans text-base md:text-lg font-light text-[#D8D3CA] leading-relaxed">
                 The architecture of Ameer Heights Tower 10 is rooted in discipline, proportion, and quiet strength. The building pairs a deep matte graphite exterior envelope with warm timber-textured vertical slats, establishing a distinct presence on the Multan streetscape.
               </p>
-            </div>
+            </ScrollReveal>
 
             {/* Confirmed Architectural Elements */}
-            <div className="space-y-4 pt-4 border-t border-[#242526]">
+            <ScrollReveal as="div" direction="right" delay={0.14} className="space-y-4 pt-4 border-t border-[#242526]">
               {projectData.architecturePhilosophy.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-3.5 group">
                   <span className="font-mono text-xs text-[#B59A6A] mt-1 shrink-0">
@@ -71,10 +72,10 @@ export const ArchitectureSection: React.FC = () => {
                   </p>
                 </div>
               ))}
-            </div>
+            </ScrollReveal>
 
             {/* Scale summary */}
-            <div className="pt-6 border-t border-[#242526] grid grid-cols-2 gap-4">
+            <ScrollReveal as="div" direction="up" delay={0.22} className="pt-6 border-t border-[#242526] grid grid-cols-2 gap-4">
               <div className="p-4 bg-[#111315] border border-[#242526]">
                 <span className="font-mono text-[10px] text-[#8C8C87] uppercase tracking-wider block">Scale</span>
                 <span className="font-serif text-lg text-[#FAF9F6]">{projectData.floors}</span>
@@ -83,7 +84,7 @@ export const ArchitectureSection: React.FC = () => {
                 <span className="font-mono text-[10px] text-[#8C8C87] uppercase tracking-wider block">Transit</span>
                 <span className="font-serif text-lg text-[#FAF9F6]">{projectData.elevator}</span>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </div>

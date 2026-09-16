@@ -1,6 +1,7 @@
 import React from 'react';
 import { projectData } from '../data/projectData';
 import { CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { ScrollReveal } from './ScrollReveal';
 
 export const Amenities: React.FC = () => {
   return (
@@ -12,7 +13,7 @@ export const Amenities: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <div>
+          <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 07 / VERIFIED PROJECT AMENITIES
@@ -22,17 +23,20 @@ export const Amenities: React.FC = () => {
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal uppercase tracking-wide text-[#FAF9F6]">
               Core Project Features
             </h2>
-          </div>
-          <p className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          </ScrollReveal>
+          <ScrollReveal as="p" direction="right" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
             Confirmed Structural & Residential Specifications
-          </p>
+          </ScrollReveal>
         </div>
 
         {/* Confirmed Amenities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectData.amenities.map((amenity, idx) => (
-            <div
+            <ScrollReveal
+              as="div"
               key={amenity.id}
+              direction="up"
+              delay={(idx % 3) * 0.08}
               className="p-8 bg-[#181B1D] border border-[#242526] hover:border-[#B59A6A]/50 transition-colors flex flex-col justify-between"
             >
               <div>
@@ -57,11 +61,11 @@ export const Amenities: React.FC = () => {
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span className="uppercase tracking-wider text-[10px]">Verified Amenity</span>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
 
           {/* Transparent Extensibility Card */}
-          <div className="p-8 bg-[#111315] border border-dashed border-[#242526] flex flex-col justify-between">
+          <ScrollReveal as="div" direction="up" delay={0.24} className="p-8 bg-[#111315] border border-dashed border-[#242526] flex flex-col justify-between">
             <div>
               <span className="font-mono text-[10px] text-[#8C8C87] uppercase tracking-[0.2em] block mb-4">
                 Transparent Advisory
@@ -76,7 +80,7 @@ export const Amenities: React.FC = () => {
             <div className="mt-8 pt-4 border-t border-[#242526] text-[10px] font-mono text-[#8C8C87] uppercase tracking-wider">
               No Fabricated Amenities Policy
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>

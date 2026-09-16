@@ -1,5 +1,6 @@
 import React from 'react';
 import { projectData } from '../data/projectData';
+import { ScrollReveal } from './ScrollReveal';
 
 export const ProjectStats: React.FC = () => {
   const stats = [
@@ -40,18 +41,21 @@ export const ProjectStats: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto">
         {/* Subtle Section Tag */}
-        <div className="flex items-center gap-3 mb-16">
+        <ScrollReveal as="div" direction="left" delay={0.00} className="flex items-center gap-3 mb-16">
           <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
             02 / PROJECT SPECIFICATIONS
           </span>
           <span className="w-8 h-[1px] bg-[#B59A6A]" />
-        </div>
+        </ScrollReveal>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
           {stats.map((stat, idx) => (
-            <div
+            <ScrollReveal
+              as="div"
               key={stat.label}
+              direction="up"
+              delay={idx * 0.07}
               className="relative p-6 md:p-8 bg-[#181B1D]/70 border border-[#242526] hover:border-[#B59A6A]/50 transition-colors duration-500 group flex flex-col justify-between"
             >
               <div className="space-y-3">
@@ -83,7 +87,7 @@ export const ProjectStats: React.FC = () => {
               <p className="text-xs text-[#8C8C87] font-light leading-relaxed mt-6 pt-4 border-t border-[#242526]">
                 {stat.caption}
               </p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

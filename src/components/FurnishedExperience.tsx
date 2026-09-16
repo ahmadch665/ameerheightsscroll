@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sofa, BedDouble, Utensils, Lamp, CheckCircle2, Sparkles } from 'lucide-react';
+import { ScrollReveal } from './ScrollReveal';
 
 export const FurnishedExperience: React.FC = () => {
   const furnishingCategories = [
@@ -34,7 +35,7 @@ export const FurnishedExperience: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <div>
+          <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 05 / INTERIOR CURATION
@@ -45,17 +46,17 @@ export const FurnishedExperience: React.FC = () => {
               Fully Furnished. <br />
               <span className="italic text-[#B59A6A]">Architect Designed.</span>
             </h2>
-          </div>
-          <p className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          </ScrollReveal>
+          <ScrollReveal as="p" direction="right" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
             Ready For Modern Living · Furniture, Accessories & Interior Elements Included
-          </p>
+          </ScrollReveal>
         </div>
 
         {/* Editorial Layout: Statement + Architectural Grid Treatment */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left: Editorial Focus */}
           <div className="lg:col-span-6 space-y-8">
-            <div className="p-8 md:p-10 bg-[#181B1D] border border-[#242526] relative">
+            <ScrollReveal as="div" direction="left" delay={0.06} className="p-8 md:p-10 bg-[#181B1D] border border-[#242526] relative">
               <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#B59A6A] block mb-3">
                 Core Philosophy
               </span>
@@ -70,10 +71,10 @@ export const FurnishedExperience: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-[#B59A6A]" />
                 <span>Zero post-handover furniture expenditure required</span>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Architectural Abstract Visual Treatment (No fake stock photos) */}
-            <div className="p-8 border border-[#242526] bg-[#111315] space-y-4">
+            <ScrollReveal as="div" direction="left" delay={0.14} className="p-8 border border-[#242526] bg-[#111315] space-y-4">
               <div className="flex items-center justify-between font-mono text-[11px] text-[#8C8C87] border-b border-[#242526] pb-3">
                 <span>INTERIOR MATERIAL SPECIFICATION</span>
                 <span className="text-[#B59A6A]">AH-INT-STD</span>
@@ -92,16 +93,19 @@ export const FurnishedExperience: React.FC = () => {
                   <span>Smoked Bronze Glass</span>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
 
           {/* Right: Detailed Inclusions Grid */}
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {furnishingCategories.map((item) => {
+            {furnishingCategories.map((item, idx) => {
               const Icon = item.icon;
               return (
-                <div
+                <ScrollReveal
+                  as="div"
                   key={item.title}
+                  direction="right"
+                  delay={idx * 0.08}
                   className="p-8 bg-[#181B1D] border border-[#242526] hover:border-[#B59A6A]/60 transition-colors group flex flex-col justify-between"
                 >
                   <div>
@@ -119,7 +123,7 @@ export const FurnishedExperience: React.FC = () => {
                     <Sparkles className="w-3 h-3" />
                     <span>Included Turnkey</span>
                   </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>

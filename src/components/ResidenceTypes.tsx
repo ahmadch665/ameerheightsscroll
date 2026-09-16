@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Bed, Home, Maximize2 } from 'lucide-react';
 import { projectData } from '../data/projectData';
+import { ScrollReveal } from './ScrollReveal';
 
 interface ResidenceTypesProps {
   onSelectCategory: (type: string) => void;
@@ -17,7 +18,7 @@ export const ResidenceTypes: React.FC<ResidenceTypesProps> = ({ onSelectCategory
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#242526] pb-8 mb-16 gap-6">
-          <div>
+          <ScrollReveal as="div" direction="left" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
                 03 / RESIDENCE TYPOLOGIES
@@ -27,22 +28,25 @@ export const ResidenceTypes: React.FC<ResidenceTypesProps> = ({ onSelectCategory
             <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-normal uppercase tracking-wide text-[#FAF9F6]">
               The Residences
             </h2>
-          </div>
-          <div className="max-w-md">
+          </ScrollReveal>
+          <ScrollReveal as="div" direction="right" delay={0.08} className="max-w-md">
             <p className="font-serif text-xl text-[#B59A6A] italic">
               Three ways to live. One elevated standard.
             </p>
             <p className="text-sm text-[#8C8C87] mt-1">
               Every layout is thoughtfully calibrated for maximum usable spatial efficiency and fully furnished completeness.
             </p>
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* 3 Main Category Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {projectData.residenceCategories.map((category) => (
-            <div
+          {projectData.residenceCategories.map((category, idx) => (
+            <ScrollReveal
+              as="div"
               key={category.id}
+              direction="up"
+              delay={idx * 0.10}
               className="group relative bg-[#111315] border border-[#242526] hover:border-[#B59A6A] transition-all duration-500 flex flex-col justify-between p-8 md:p-10"
             >
               {/* Top Meta */}
@@ -106,7 +110,7 @@ export const ResidenceTypes: React.FC<ResidenceTypesProps> = ({ onSelectCategory
                   Enquire
                 </button>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { projectData } from '../data/projectData';
 import { ArrowUp } from 'lucide-react';
+import { ScrollReveal } from './ScrollReveal';
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -16,7 +17,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-16 border-b border-[#242526]">
           {/* Brand Identity Column */}
-          <div className="lg:col-span-5 space-y-4">
+          <ScrollReveal as="div" direction="left" delay={0.00} className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 border border-[#B59A6A]/60 flex items-center justify-center bg-[#181B1D] text-[#B59A6A] font-serif font-medium text-base">
                 <span>AH</span>
@@ -31,10 +32,10 @@ export const Footer: React.FC = () => {
             <div className="pt-2 font-mono text-[11px] text-[#B59A6A]">
               <span>SELLING RATE: PKR 15,000 / SQ FT</span>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Quick Navigation Column */}
-          <div className="lg:col-span-3 space-y-3 font-mono text-xs">
+          <ScrollReveal as="div" direction="up" delay={0.08} className="lg:col-span-3 space-y-3 font-mono text-xs">
             <p className="text-[#8C8C87] uppercase tracking-[0.2em] text-[10px] mb-4">Architecture</p>
             <ul className="space-y-2.5 text-[#D8D3CA]">
               <li><a href="#overview" className="hover:text-[#B59A6A] transition-colors">The Residence</a></li>
@@ -44,20 +45,20 @@ export const Footer: React.FC = () => {
               <li><a href="#architecture" className="hover:text-[#B59A6A] transition-colors">Building Form & Facade</a></li>
               <li><a href="#location" className="hover:text-[#B59A6A] transition-colors">Geographic Position</a></li>
             </ul>
-          </div>
+          </ScrollReveal>
 
           {/* Project Details Column */}
-          <div className="lg:col-span-4 space-y-3 font-mono text-xs text-[#8C8C87]">
+          <ScrollReveal as="div" direction="right" delay={0.14} className="lg:col-span-4 space-y-3 font-mono text-xs text-[#8C8C87]">
             <p className="uppercase tracking-[0.2em] text-[10px] mb-4 text-[#8C8C87]">Site Address</p>
             <p className="text-[#FAF9F6]">{projectData.location.address}</p>
             <p>{projectData.location.landmark}</p>
             <p>{projectData.location.city}, {projectData.location.province}, {projectData.location.country}</p>
             <p className="text-[#B59A6A] pt-2">{projectData.location.coordinatesText}</p>
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-[#8C8C87]">
+        <ScrollReveal as="div" direction="fade" delay={0.20} className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] text-[#8C8C87]">
           <p>© {new Date().getFullYear()} {projectData.name} {projectData.subName}. All architectural and project rights reserved.</p>
           <button
             type="button"
@@ -67,7 +68,7 @@ export const Footer: React.FC = () => {
             <span>Back to Top</span>
             <ArrowUp className="w-3.5 h-3.5 text-[#B59A6A]" />
           </button>
-        </div>
+        </ScrollReveal>
       </div>
     </footer>
   );
