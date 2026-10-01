@@ -2,6 +2,7 @@ import React from 'react';
 import { projectData } from '../data/projectData';
 import { ArrowUp } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -19,8 +20,8 @@ export const Footer: React.FC = () => {
           {/* Brand Identity Column */}
           <ScrollReveal as="div" direction="left" delay={0.00} className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border border-[#B59A6A]/60 flex items-center justify-center bg-[#181B1D] text-[#B59A6A] font-serif font-medium text-base">
-                <span>AH</span>
+              <div className="w-8 h-8 border border-[#B59A6A]/60 flex items-center justify-center bg-[#181B1D] overflow-hidden">
+                <BrandLogo className="w-full h-full" />
               </div>
               <span className="font-serif tracking-[0.2em] text-lg font-medium text-[#FAF9F6] uppercase">
                 {projectData.name} <span className="text-[#B59A6A]">{projectData.subName}</span>

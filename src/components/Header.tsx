@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { projectData } from '../data/projectData';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   onOpenEnquiry: (prefill?: { type?: string; size?: string }) => void;
@@ -61,8 +62,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenEnquiry }) => {
             className="group flex items-center gap-3.5 focus:outline-none"
             aria-label="Ameer Heights Tower 10 Home"
           >
-            <div className="w-9 h-9 border border-[#B59A6A]/60 flex items-center justify-center bg-[#181B1D] text-[#B59A6A] font-serif font-medium text-lg tracking-wider group-hover:border-[#B59A6A] transition-colors">
-              <span>AH</span>
+            <div className="w-9 h-9 border border-[#B59A6A]/60 flex items-center justify-center bg-[#181B1D] group-hover:border-[#B59A6A] transition-colors overflow-hidden">
+              <BrandLogo className="w-full h-full" />
             </div>
             <div className="flex flex-col text-left">
               <span className="font-serif tracking-[0.22em] text-[15px] font-medium text-[#FAF9F6] uppercase leading-tight group-hover:text-[#B59A6A] transition-colors">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { BrandLogo } from './BrandLogo';
 
 const floors = [76, 146, 216, 286, 356];
 
@@ -71,7 +72,8 @@ export const Preloader: React.FC = () => {
           <rect className="bp-sweep" x="20" y="10" width="82" height="450" fill="url(#blueprintSweep)" clipPath="url(#blueprintFacade)" />
         </svg>
 
-        <p className="bp-caption mt-5 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#FAF9F6] sm:text-[11px]">
+        <BrandLogo className="bp-logo mt-3 h-16 w-16" />
+        <p className="bp-caption mt-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-[#FAF9F6] sm:text-[11px]">
           Ameer Heights - Tower 10, Multan.
         </p>
       </div>
@@ -89,14 +91,15 @@ export const Preloader: React.FC = () => {
         .bp-windows { stroke-dasharray: 620; stroke-dashoffset: 620; opacity: 0; animation: bp-draw 520ms cubic-bezier(.2,.8,.2,1) forwards; }
         .bp-details { opacity: 0; animation: bp-detail 420ms ease-out 1340ms forwards; }
         .bp-sweep { opacity: 0; transform: translateX(-130px); animation: bp-sweep 720ms ease-in-out 1450ms forwards; }
-        .bp-caption { opacity: 0; transform: translateY(8px); animation: bp-caption 480ms cubic-bezier(.22,1,.36,1) 690ms forwards; }
+        .bp-logo { opacity: 0; transform: translateY(8px); animation: bp-caption 480ms cubic-bezier(.22,1,.36,1) 690ms forwards; }
+        .bp-caption { opacity: 0; transform: translateY(8px); animation: bp-caption 480ms cubic-bezier(.22,1,.36,1) 820ms forwards; }
         @keyframes bp-grid { to { opacity: .62; } }
         @keyframes bp-draw { 0% { opacity: 0; stroke-dashoffset: 100%; } 10% { opacity: 1; } 100% { opacity: 1; stroke-dashoffset: 0; } }
         @keyframes bp-detail { to { opacity: 1; } }
         @keyframes bp-sweep { 0% { opacity: 0; transform: translateX(-130px); } 20% { opacity: .7; } 100% { opacity: 0; transform: translateX(350px); } }
         @keyframes bp-caption { to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) {
-          .blueprint-grid, .bp-outline, .bp-floor, .bp-windows, .bp-details, .bp-sweep, .bp-caption { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-fill-mode: forwards !important; }
+          .blueprint-grid, .bp-outline, .bp-floor, .bp-windows, .bp-details, .bp-sweep, .bp-logo, .bp-caption { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-fill-mode: forwards !important; }
         }
       `}</style>
     </div>
