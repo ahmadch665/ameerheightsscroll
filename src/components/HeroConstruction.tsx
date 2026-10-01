@@ -7,10 +7,21 @@ interface HeroConstructionProps {
 }
 
 const TOTAL_FRAMES = 30;
-const FRAME_PATHS = Array.from(
-  { length: TOTAL_FRAMES },
-  (_, i) => `/assets/construction_frames/frame_${String(i + 1).padStart(2, '0')}.webp`
-);
+const STAGE_IMAGE_PATHS = [
+  '/assets/ameer-heights-stage-foundation.png',
+  '/assets/ameer-heights-stage-structure.png',
+  '/assets/ameer-heights-stage-rise.png',
+  '/assets/ameer-heights-final-elevation.png',
+] as const;
+
+// The existing 30-step scroll camera remains intact. These values simply hold
+// each supplied photograph long enough for a calm stage-to-stage crossfade.
+const FRAME_STAGE_INDEX = Array.from({ length: TOTAL_FRAMES }, (_, index) => {
+  if (index < 8) return 0;
+  if (index < 15) return 1;
+  if (index < 22) return 2;
+  return 3;
+});
 
 interface Chapter {
   id: string;
@@ -184,9 +195,9 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
   const animFrameRef = useRef<number | null>(null);
   const timelineBarRef = useRef<HTMLDivElement>(null);
 
-  // Preloaded image elements in memory
-  const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(TOTAL_FRAMES).fill(null));
-  const loadedFlagsRef = useRef<boolean[]>(new Array(TOTAL_FRAMES).fill(false));
+  // Four supplied assets are decoded once; 30 virtual timeline frames reuse them.
+  const imagesRef = useRef<(HTMLImageElement | null)[]>(new Array(STAGE_IMAGE_PATHS.length).fill(null));
+  const loadedFlagsRef = useRef<boolean[]>(new Array(STAGE_IMAGE_PATHS.length).fill(false));
 
   // High-precision scroll & animation tracking (Mutable refs outside React render cycle)
   const targetProgressRef = useRef(0);
@@ -211,19 +222,22 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
   const getNearestLoadedImage = useCallback((targetIndex: number): HTMLImageElement | null => {
     const images = imagesRef.current;
     const loaded = loadedFlagsRef.current;
+    const targetStage = FRAME_STAGE_INDEX[targetIndex];
 
-    if (loaded[targetIndex] && images[targetIndex]) {
-      return images[targetIndex];
+    if (loaded[targetStage] && images[targetStage]) {
+      return images[targetStage];
     }
 
-    // Search backwards first (prior stage)
+    // Search the virtual timeline backwards first while later photographs decode.
     for (let i = targetIndex - 1; i >= 0; i--) {
-      if (loaded[i] && images[i]) return images[i];
+      const stage = FRAME_STAGE_INDEX[i];
+      if (loaded[stage] && images[stage]) return images[stage];
     }
 
-    // Search forwards
+    // Search forwards only as a final loading fallback.
     for (let i = targetIndex + 1; i < TOTAL_FRAMES; i++) {
-      if (loaded[i] && images[i]) return images[i];
+      const stage = FRAME_STAGE_INDEX[i];
+      if (loaded[stage] && images[stage]) return images[stage];
     }
 
     return null;
@@ -361,10 +375,13 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     let isMounted = true;
 
     // Asynchronously load and decode image off main thread
-    const loadAndDecode = async (index: number): Promise<HTMLImageElement | null> => {
+    const loadAndDecode = async (stageIndex: number): Promise<HTMLImageElement | null> => {
       try {
+        if (loadedFlagsRef.current[stageIndex] && imagesRef.current[stageIndex]) {
+          return imagesRef.current[stageIndex];
+        }
         const img = new Image();
-        img.src = FRAME_PATHS[index];
+        img.src = STAGE_IMAGE_PATHS[stageIndex];
         if (typeof img.decode === 'function') {
           await img.decode();
         } else {
@@ -374,8 +391,8 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           });
         }
         if (!isMounted) return null;
-        imagesRef.current[index] = img;
-        loadedFlagsRef.current[index] = true;
+        imagesRef.current[stageIndex] = img;
+        loadedFlagsRef.current[stageIndex] = true;
         return img;
       } catch {
         return null;
@@ -383,8 +400,8 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
     };
 
     const runPreload = async () => {
-      // Stage 1: Load & decode initial frame 01 immediately for zero-delay presentation
-      const f1 = await loadAndDecode(0);
+      // Stage 1: Load the foundation image immediately for zero-delay presentation.
+      const f1 = await loadAndDecode(FRAME_STAGE_INDEX[0]);
       if (!isMounted) return;
 
       if (f1) {
@@ -393,33 +410,13 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         drawInterpolatedFrame(0);
       }
 
-      // Stage 2: Immediately decode early sequence frames (02 to 06) so initial scroll is buttery smooth
-      for (let i = 1; i < Math.min(6, TOTAL_FRAMES); i++) {
+      // Stage 2: Decode each later construction milestone once, in chronological order.
+      for (let i = 1; i < STAGE_IMAGE_PATHS.length; i++) {
         if (!isMounted) return;
         await loadAndDecode(i);
-        // If user already scrolled to this section, render frame immediately
-        const curProgress = currentProgressRef.current;
-        if (Math.abs(curProgress * (TOTAL_FRAMES - 1) - i) < 1.0) {
-          drawInterpolatedFrame(curProgress);
-        }
-      }
-
-      // Stage 3: Progressively preload and decode all remaining frames in parallel batches of 3
-      const remaining: number[] = [];
-      for (let i = 6; i < TOTAL_FRAMES; i++) {
-        remaining.push(i);
-      }
-
-      const batchSize = 3;
-      for (let i = 0; i < remaining.length; i += batchSize) {
-        if (!isMounted) return;
-        const chunk = remaining.slice(i, i + batchSize);
-        await Promise.all(chunk.map((idx) => loadAndDecode(idx)));
-
-        const curProgress = currentProgressRef.current;
-        const activeIdx = Math.round(curProgress * (TOTAL_FRAMES - 1));
-        if (chunk.includes(activeIdx)) {
-          drawInterpolatedFrame(curProgress);
+        const activeStage = FRAME_STAGE_INDEX[Math.round(currentProgressRef.current * (TOTAL_FRAMES - 1))];
+        if (activeStage === i) {
+          drawInterpolatedFrame(currentProgressRef.current);
         }
       }
     };
@@ -601,7 +598,7 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
           <canvas
             ref={canvasRef}
             className="w-full h-full object-contain pointer-events-none z-10"
-            aria-label="Ameer Heights Tower 10 3D Construction Animation"
+            aria-label="Ameer Heights Tower 10 construction timeline"
           />
 
           {/* Fallback & Initial Loading State */}
