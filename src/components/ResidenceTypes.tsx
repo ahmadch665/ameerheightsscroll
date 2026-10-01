@@ -37,7 +37,7 @@ export const ResidenceTypes: React.FC<ResidenceTypesProps> = ({ onSelectCategory
             <p className="font-serif text-xl text-[#B59A6A] italic">
               Three ways to live. One elevated standard.
             </p>
-            <p className="text-sm text-[#8C8C87] mt-1">
+            <p className="mt-1 text-[15px] leading-relaxed text-[#AAA69E] [text-shadow:0_1px_12px_rgba(17,19,21,0.7)]">
               Every layout is thoughtfully calibrated for maximum usable spatial efficiency and fully furnished completeness.
             </p>
           </ScrollReveal>

@@ -272,15 +272,25 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
         ? { scale: 1.0, panX: 0, panY: 0 }
         : getCameraState(clampedProgress);
 
-      // Natural contain-scaling preserving exact building proportions
-      const imgW = baseImg.naturalWidth;
-      const imgH = baseImg.naturalHeight;
-      const fitScale = Math.min(cw / imgW, ch / imgH);
-      const effectiveScale = fitScale * camera.scale;
-
       // Sub-pixel floating point positioning (prevents 1px integer rounding stutter)
       const centerX = cw / 2 + cw * camera.panX;
       const centerY = ch / 2 + ch * camera.panY;
+
+      // Desktop retains the existing contain framing. The three new landscape
+      // construction stages use a centered cover fit on phones only, avoiding
+      // empty bands on a 9:16 viewport while preserving the final elevation.
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const getImageBounds = (image: HTMLImageElement, stageIndex: number) => {
+        const imageW = image.naturalWidth;
+        const imageH = image.naturalHeight;
+        const fitScale = isMobile && stageIndex < 3
+          ? Math.max(cw / imageW, ch / imageH)
+          : Math.min(cw / imageW, ch / imageH);
+        const effectiveScale = fitScale * camera.scale;
+        const width = imageW * effectiveScale;
+        const height = imageH * effectiveScale;
+        return { x: -width / 2, y: -height / 2, width, height };
+      };
 
       // Unified architectural backdrop fill
       ctx.fillStyle = '#111315';
@@ -290,32 +300,31 @@ export const HeroConstruction: React.FC<HeroConstructionProps> = ({ onOpenEnquir
       ctx.save();
       ctx.translate(centerX, centerY);
 
-      // CRITICAL: Floating-point dimensions render smoothly without integer snapping
-      const dw = imgW * effectiveScale;
-      const dh = imgH * effectiveScale;
-      const dx = -dw / 2;
-      const dy = -dh / 2;
+      const baseBounds = getImageBounds(baseImg, FRAME_STAGE_INDEX[baseIndex]);
 
       const nextImg = baseIndex !== nextIndex ? getNearestLoadedImage(nextIndex) : null;
+      const nextBounds = nextImg
+        ? getImageBounds(nextImg, FRAME_STAGE_INDEX[nextIndex])
+        : null;
 
       if (!nextImg || blendFactor < 0.06) {
         // Pure single sharp frame
         ctx.globalAlpha = 1.0;
-        ctx.drawImage(baseImg, dx, dy, dw, dh);
+        ctx.drawImage(baseImg, baseBounds.x, baseBounds.y, baseBounds.width, baseBounds.height);
       } else if (blendFactor > 0.94) {
         // Pure next sharp frame
         ctx.globalAlpha = 1.0;
-        ctx.drawImage(nextImg, dx, dy, dw, dh);
+        ctx.drawImage(nextImg, nextBounds!.x, nextBounds!.y, nextBounds!.width, nextBounds!.height);
       } else {
         // Crossfade with smoothstep easing at identical geometric coordinates (zero blur, zero ghosting)
         const t = (blendFactor - 0.06) / 0.88;
         const smoothT = t * t * (3 - 2 * t);
 
         ctx.globalAlpha = 1.0;
-        ctx.drawImage(baseImg, dx, dy, dw, dh);
+        ctx.drawImage(baseImg, baseBounds.x, baseBounds.y, baseBounds.width, baseBounds.height);
 
         ctx.globalAlpha = smoothT;
-        ctx.drawImage(nextImg, dx, dy, dw, dh);
+        ctx.drawImage(nextImg, nextBounds!.x, nextBounds!.y, nextBounds!.width, nextBounds!.height);
       }
 
       ctx.restore();

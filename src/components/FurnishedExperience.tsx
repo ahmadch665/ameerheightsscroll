@@ -51,7 +51,7 @@ export const FurnishedExperience: React.FC = () => {
               <span className="italic text-[#B59A6A]">Architect Designed.</span>
             </h2>
           </ScrollReveal>
-          <ScrollReveal as="p" direction="up" delay={0.08} className="font-mono text-xs text-[#8C8C87] uppercase tracking-[0.2em] max-w-sm">
+          <ScrollReveal as="p" direction="up" delay={0.08} className="max-w-sm font-mono text-xs text-[#AAA69E] uppercase tracking-[0.2em] [text-shadow:0_1px_12px_rgba(17,19,21,0.7)]">
             Ready For Modern Living · Furniture, Accessories & Interior Elements Included
           </ScrollReveal>
         </div>
