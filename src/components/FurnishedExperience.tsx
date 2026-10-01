@@ -42,7 +42,7 @@ export const FurnishedExperience: React.FC = () => {
           <ScrollReveal as="div" direction="right" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
-                05 / INTERIOR CURATION
+                06 / INTERIOR CURATION
               </span>
               <span className="w-8 h-[1px] bg-[#B59A6A]" />
             </div>

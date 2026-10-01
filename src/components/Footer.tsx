@@ -40,6 +40,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-[#D8D3CA]">
               <li><a href="#overview" className="hover:text-[#B59A6A] transition-colors">The Residence</a></li>
               <li><a href="#residences" className="hover:text-[#B59A6A] transition-colors">Residence Typologies</a></li>
+              <li><a href="#floor-plans" className="hover:text-[#B59A6A] transition-colors">Floor Plans &amp; Residences</a></li>
               <li><a href="#inventory" className="hover:text-[#B59A6A] transition-colors">Apartment Inventory</a></li>
               <li><a href="#furnished" className="hover:text-[#B59A6A] transition-colors">Furnished Inclusions</a></li>
               <li><a href="#architecture" className="hover:text-[#B59A6A] transition-colors">Building Form & Facade</a></li>

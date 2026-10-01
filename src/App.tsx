@@ -11,6 +11,7 @@ import { HeroConstruction } from './components/HeroConstruction';
 import { ProjectIntro } from './components/ProjectIntro';
 import { ProjectStats } from './components/ProjectStats';
 import { ResidenceTypes } from './components/ResidenceTypes';
+import { FloorPlansResidences } from './components/FloorPlansResidences';
 import { ApartmentInventory } from './components/ApartmentInventory';
 import { FurnishedExperience } from './components/FurnishedExperience';
 import { ArchitectureSection } from './components/ArchitectureSection';
@@ -85,23 +86,26 @@ export default function App() {
           onOpenEnquiry={(prefill) => handleOpenEnquiry(prefill)}
         />
 
-        {/* Section 04: Complete Apartment Inventory & Pricing Table */}
+        {/* Section 04: Interactive Floor Plans & Residences */}
+        <FloorPlansResidences />
+
+        {/* Section 05: Complete Apartment Inventory & Pricing Table */}
         <ApartmentInventory
           selectedTypeFilter={selectedTypeFilter}
           onFilterChange={setSelectedTypeFilter}
           onSelectUnit={handleSelectUnit}
         />
 
-        {/* Section 05: Fully Furnished & Architect Designed Inclusions */}
+        {/* Section 06: Fully Furnished & Architect Designed Inclusions */}
         <FurnishedExperience />
 
-        {/* Section 06: Architecture With Intention & Facade Form */}
+        {/* Section 07: Architecture With Intention & Facade Form */}
         <ArchitectureSection />
 
-        {/* Section 07: Confirmed Project Features & Amenities */}
+        {/* Section 08: Confirmed Project Features & Amenities */}
         <Amenities />
 
-        {/* Section 08: Geographic Positioning & Location Details */}
+        {/* Section 09: Geographic Positioning & Location Details */}
         <LocationSection />
 
         {/* Section 09: Enquiry Call to Action */}

@@ -839,7 +839,7 @@ export const LocationSection: React.FC = () => {
           {/* Precision Top Reticles & Telemetry HUD */}
           <div className="absolute top-28 left-6 md:left-16 hidden sm:flex items-center gap-3 font-mono text-[9px] text-[#8C8C87] tracking-[0.25em] z-20 pointer-events-none">
             <div className="w-2.5 h-2.5 border-t border-l border-[#B59A6A]/70" />
-            <span>08 / GEOGRAPHIC PRECISION</span>
+            <span>09 / GEOGRAPHIC PRECISION</span>
           </div>
 
           <div

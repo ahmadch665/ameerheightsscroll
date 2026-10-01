@@ -27,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenEnquiry }) => {
   const navLinks = [
     { label: 'Overview', href: '#overview' },
     { label: 'Residences', href: '#residences' },
+    { label: 'Floor Plans', href: '#floor-plans' },
     { label: 'Inventory', href: '#inventory' },
     { label: 'Furnished Living', href: '#furnished' },
     { label: 'Architecture', href: '#architecture' },
