@@ -2,6 +2,7 @@ import React from 'react';
 import { Sofa, BedDouble, Utensils, Lamp, CheckCircle2, Sparkles } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
 import { FurnishedBackground } from './backgrounds/FurnishedBackground';
+import { projectData } from '../data/projectData';
 
 export const FurnishedExperience: React.FC = () => {
   const furnishingCategories = [
@@ -31,7 +32,7 @@ export const FurnishedExperience: React.FC = () => {
     <section
       id="furnished"
       className="relative bg-[#111315] text-[#FAF9F6] py-28 md:py-36 px-6 md:px-16 border-t border-[#242526] overflow-hidden"
-      aria-label="Fully Furnished and Architect Designed Residences"
+      aria-label="Lifestyle and Amenities"
     >
       {/* Living Interior Light & Translucent Plane Environment */}
       <FurnishedBackground />
@@ -42,17 +43,17 @@ export const FurnishedExperience: React.FC = () => {
           <ScrollReveal as="div" direction="right" delay={0.00}>
             <div className="flex items-center gap-3 mb-4">
               <span className="font-mono text-xs text-[#B59A6A] font-semibold tracking-[0.25em] uppercase">
-                06 / INTERIOR CURATION
+                06 / LIFESTYLE & AMENITIES
               </span>
               <span className="w-8 h-[1px] bg-[#B59A6A]" />
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal uppercase tracking-wide text-[#FAF9F6] leading-[1.1]">
-              Fully Furnished. <br />
-              <span className="italic text-[#B59A6A]">Architect Designed.</span>
+              Lifestyle &amp; <br />
+              <span className="italic text-[#B59A6A]">Amenities.</span>
             </h2>
           </ScrollReveal>
           <ScrollReveal as="p" direction="up" delay={0.08} className="max-w-sm font-mono text-xs text-[#AAA69E] uppercase tracking-[0.2em] [text-shadow:0_1px_12px_rgba(17,19,21,0.7)]">
-            Ready For Modern Living · Furniture, Accessories & Interior Elements Included
+            A Complete Residential Experience · Fully Furnished Living & Everyday Essentials
           </ScrollReveal>
         </div>
 
@@ -130,6 +131,24 @@ export const FurnishedExperience: React.FC = () => {
                 </ScrollReveal>
               );
             })}
+          </div>
+        </div>
+
+        <div id="amenities" className="mt-10 pt-8 border-t border-[#242526]">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#B59A6A]">Everyday Essentials</span>
+              <h3 className="font-serif text-2xl text-[#FAF9F6] italic mt-2">Designed for ease, from arrival to home.</h3>
+            </div>
+            <p className="max-w-sm font-mono text-[10px] uppercase tracking-[0.16em] text-[#8C8C87]">Thoughtful amenities that complement the calm of a fully finished residence.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {projectData.amenities.map((amenity) => (
+              <div key={amenity.id} className="group min-h-[132px] border border-[#242526] bg-[#181B1D]/80 p-4 transition-colors hover:border-[#B59A6A]/60">
+                <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#B59A6A]">{amenity.category}</span>
+                <h4 className="font-serif text-base leading-snug text-[#FAF9F6] mt-3 group-hover:text-[#B59A6A] transition-colors">{amenity.title}</h4>
+              </div>
+            ))}
           </div>
         </div>
       </div>

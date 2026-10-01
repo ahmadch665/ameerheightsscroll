@@ -15,7 +15,7 @@ import { FloorPlansResidences } from './components/FloorPlansResidences';
 import { ApartmentInventory } from './components/ApartmentInventory';
 import { FurnishedExperience } from './components/FurnishedExperience';
 import { ArchitectureSection } from './components/ArchitectureSection';
-import { Amenities } from './components/Amenities';
+import { ProjectVision } from './components/ProjectVision';
 import { LocationSection } from './components/LocationSection';
 import { EnquiryCTA } from './components/EnquiryCTA';
 import { Footer } from './components/Footer';
@@ -102,8 +102,8 @@ export default function App() {
         {/* Section 07: Architecture With Intention & Facade Form */}
         <ArchitectureSection />
 
-        {/* Section 08: Confirmed Project Features & Amenities */}
-        <Amenities />
+        {/* Section 08: Future lifestyle and project outlook */}
+        <ProjectVision />
 
         {/* Section 09: Geographic Positioning & Location Details */}
         <LocationSection />
