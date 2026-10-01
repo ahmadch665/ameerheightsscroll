@@ -31,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenEnquiry }) => {
     { label: 'Inventory', href: '#inventory' },
     { label: 'Furnished Living', href: '#furnished' },
     { label: 'Architecture', href: '#architecture' },
-    { label: 'Amenities', href: '#amenities' },
     { label: 'Location', href: '#location' },
   ];
 

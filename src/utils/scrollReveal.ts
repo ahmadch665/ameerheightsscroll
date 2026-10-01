@@ -26,8 +26,8 @@ export interface ScrollRevealConfig {
   direction?: RevealDirection;
   distance?: number;
   delay?: number; // Stagger factor (0.0 to 0.4)
-  triggerBottomFactor?: number; // Viewport fraction where entrance starts (default: 0.94)
-  triggerSettleFactor?: number; // Viewport fraction where entrance settles (default: 0.68)
+  triggerBottomFactor?: number; // Viewport fraction where entrance starts (default: 1.20)
+  triggerSettleFactor?: number; // Viewport fraction where entrance settles (default: 0.94)
 }
 
 export interface ParallaxConfig {
@@ -298,8 +298,8 @@ class ScrollRevealManager {
     const scrollY = typeof window !== 'undefined' ? window.scrollY || window.pageYOffset || 0 : 0;
     const rect = element.getBoundingClientRect();
 
-    const triggerBottomFactor = config.triggerBottomFactor ?? 0.94;
-    const triggerSettleFactor = config.triggerSettleFactor ?? 0.68;
+    const triggerBottomFactor = config.triggerBottomFactor ?? 1.20;
+    const triggerSettleFactor = config.triggerSettleFactor ?? 0.94;
     const delay = Math.min(config.delay ?? 0, 0.45);
     const direction = config.direction ?? 'up';
 
